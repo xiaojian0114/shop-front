@@ -1,0 +1,78 @@
+{
+  "pages": [
+    {
+      "path": "pages/auth/login",
+      "style": { "navigationBarTitleText": "登录注册" }
+    },
+    {
+      "path": "pages/user/index",
+      "style": { "navigationBarTitleText": "首页" }
+    },
+    {
+      "path": "pages/user/cart",
+      "style": { "navigationBarTitleText": "购物车" }
+    },
+    {
+      "path": "pages/user/mine",
+      "style": { "navigationBarTitleText": "我的" }
+    },
+    {
+      "path": "pages/merchant/index",
+      "style": { "navigationBarTitleText": "商品列表" }
+    },
+    {
+      "path": "pages/merchant/shop",
+      "style": { "navigationBarTitleText": "店铺管理" }
+    },
+    {
+      "path": "pages/merchant/mine",
+      "style": { "navigationBarTitleText": "商家中心" }
+    },
+    {
+      "path": "pages/common/goods-detail",
+      "style": { "navigationBarTitleText": "商品详情" }
+    },
+    {
+      "path": "pages/common/order-list",
+      "style": { "navigationBarTitleText": "我的订单" }
+    },
+    {
+      "path": "pages/merchant/add-goods",
+      "style": { "navigationBarTitleText": "上架商品" }
+    },
+    {
+      "path": "pages/common/shop-detail",
+      "style": { "navigationBarTitleText": "店铺详情" }
+    },
+    {
+      "path": "pages/common/order-confirm",
+      "style": {
+        "navigationBarTitleText": "确认订单"
+      }
+    }
+  ],
+  "tabBar": {
+    "color": "#999",
+    "selectedColor": "#ff6b00",
+    "list": [
+      {
+        "pagePath": "pages/user/index",
+        "text": "首页",
+        "iconPath": "static/tab/home.png",
+        "selectedIconPath": "static/tab/home-active.png"
+      },
+      {
+        "pagePath": "pages/user/cart",
+        "text": "购物车",
+        "iconPath": "static/tab/cart.png",
+        "selectedIconPath": "static/tab/cart-active.png"
+      },
+      {
+        "pagePath": "pages/user/mine",
+        "text": "我的",
+        "iconPath": "static/tab/mine.png",
+        "selectedIconPath": "static/tab/mine-active.png"
+      }
+    ]
+  }
+}
