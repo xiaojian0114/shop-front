@@ -74,6 +74,12 @@
         "navigationBarTitleText": "订单管理",
         "enablePullDownRefresh": true
       }
+    },
+    {
+      "path": "pages/merchant/order-detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
     }
   ],
   "tabBar": {

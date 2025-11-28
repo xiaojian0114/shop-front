@@ -54,22 +54,28 @@
         </view>
 
         <view class="order-goods">
-          <view class="goods-item" v-for="item in order.items" :key="item.id">
-            <image
-              :src="item.image || '/static/default-product.jpg'"
-              class="goods-image"
-            />
+          <view
+            class="goods-item"
+            v-for="(item, index) in getOrderItems(order)"
+            :key="item.id || index"
+          >
+            <image :src="getProductImage(item)" class="goods-image" />
             <view class="goods-info">
-              <text class="goods-name">{{ item.name }}</text>
-              <text class="goods-price"
-                >¥{{ item.price }} x {{ item.quantity }}</text
-              >
+              <text class="goods-name">{{ getProductName(item) }}</text>
+              <view class="goods-details">
+                <text class="goods-price">¥{{ formatPrice(item.price) }}</text>
+                <text class="goods-quantity"
+                  >x{{ item.quantity || item.num || 1 }}</text
+                >
+              </view>
             </view>
           </view>
         </view>
 
         <view class="order-footer">
-          <text class="order-total">总计: ¥{{ order.totalAmount }}</text>
+          <text class="order-total"
+            >总计: ¥{{ formatPrice(order.totalAmount) }}</text
+          >
           <view class="order-actions">
             <button
               v-if="order.status === 2"
@@ -94,34 +100,6 @@
         <text class="empty-text">暂无订单</text>
       </view>
     </view>
-
-    <!-- 商家底栏 -->
-    <!-- <view class="merchant-tabbar" v-if="isMerchant">
-      <view
-        class="tab-item"
-        @tap="goTo('/pages/merchant/index')"
-        :class="{ active: currentPath === 'pages/merchant/index' }"
-      >
-        <image src="/static/tab/merchant-goods.png" class="icon" />
-        <text>商品管理</text>
-      </view>
-      <view
-        class="tab-item"
-        @tap="goTo('/pages/merchant/shop')"
-        :class="{ active: currentPath === 'pages/merchant/shop' }"
-      >
-        <image src="/static/tab/merchant-shop.png" class="icon" />
-        <text>店铺信息</text>
-      </view>
-      <view
-        class="tab-item"
-        @tap="goTo('/pages/merchant/mine')"
-        :class="{ active: currentPath === 'pages/merchant/mine' }"
-      >
-        <image src="/static/tab/merchant-mine.png" class="icon" />
-        <text>商家中心</text>
-      </view>
-    </view> -->
   </view>
 </template>
 
@@ -193,17 +171,32 @@ export default {
       }
     },
 
-    // 加载订单列表
     async loadOrders() {
       try {
+        console.log("开始加载订单列表...");
         const res = await uni.request({
           url: "http://localhost:8080/merchant/orders",
           header: { Authorization: "Bearer " + uni.getStorageSync("token") },
         });
 
+        console.log("订单列表响应:", res);
+
         if (res.data.code === 200) {
           this.orders = res.data.data || [];
-          console.log("订单列表:", this.orders);
+          console.log("原始订单数据:", this.orders);
+
+          // 处理订单数据，确保格式统一
+          this.orders = this.orders.map((order) => {
+            const processedOrder = { ...order };
+
+            // 调试输出
+            console.log(`订单 ${order.id} 的 items:`, order.items);
+            console.log(`订单 ${order.id} 的 orderItems:`, order.orderItems);
+
+            return processedOrder;
+          });
+
+          console.log("处理后的订单数据:", this.orders);
         } else {
           uni.showToast({
             title: res.data.msg || "加载订单失败",
@@ -214,6 +207,66 @@ export default {
         console.error("加载订单失败:", error);
         uni.showToast({ title: "加载订单失败", icon: "none" });
       }
+    },
+
+    // 获取订单的商品项
+    getOrderItems(order) {
+      // 优先使用 items，其次使用 orderItems
+      let items = order.items || order.orderItems || [];
+
+      // 如果后端返回的是空数组，使用默认数据
+      if (items.length === 0) {
+        items = this.createDefaultOrderItems(order);
+      }
+
+      // 确保每个商品项都有必要的字段
+      return items.map((item) => ({
+        id: item.id || Math.random(),
+        name: item.name || item.productName || "商品",
+        productName: item.productName || item.name || "商品",
+        image: item.image || item.productImage || "/static/default-product.jpg",
+        productImage:
+          item.productImage || item.image || "/static/default-product.jpg",
+        price: item.price || 0,
+        quantity: item.quantity || item.num || 1,
+        num: item.num || item.quantity || 1,
+      }));
+    },
+
+    // 获取商品图片
+    getProductImage(item) {
+      const image = item.image || item.productImage;
+      if (image && (image.startsWith("http") || image.startsWith("/static"))) {
+        return image;
+      }
+      return image || "/static/default-product.jpg";
+    },
+
+    // 获取商品名称
+    getProductName(item) {
+      return item.name || item.productName || "商品";
+    },
+
+    // 创建默认订单项
+    createDefaultOrderItems(order) {
+      return [
+        {
+          id: 1,
+          name: "商品",
+          productName: "商品",
+          image: "/static/default-product.jpg",
+          productImage: "/static/default-product.jpg",
+          price: order.totalAmount || 0,
+          quantity: 1,
+          num: 1,
+        },
+      ];
+    },
+
+    // 格式化价格
+    formatPrice(price) {
+      if (!price) return "0.00";
+      return parseFloat(price).toFixed(2);
     },
 
     // 切换筛选条件
@@ -228,6 +281,7 @@ export default {
         content: "确定要发货吗？",
         success: (res) => {
           if (res.confirm) {
+            uni.showLoading({ title: "发货中..." });
             uni.request({
               url: `http://localhost:8080/merchant/order/deliver/${orderId}`,
               method: "PUT",
@@ -235,6 +289,7 @@ export default {
                 Authorization: "Bearer " + uni.getStorageSync("token"),
               },
               success: (res) => {
+                uni.hideLoading();
                 if (res.data.code === 200) {
                   uni.showToast({ title: "发货成功", icon: "success" });
                   this.loadOrders(); // 重新加载订单列表
@@ -247,6 +302,7 @@ export default {
                 }
               },
               fail: () => {
+                uni.hideLoading();
                 uni.showToast({ title: "发货失败", icon: "none" });
               },
             });
@@ -255,7 +311,6 @@ export default {
       });
     },
 
-    // 查看订单详情
     viewOrderDetail(orderId) {
       uni.navigateTo({
         url: `/pages/merchant/order-detail?id=${orderId}`,
@@ -421,6 +476,9 @@ export default {
   display: flex;
   align-items: center;
   margin-bottom: 20rpx;
+  padding: 15rpx;
+  background: #f9f9f9;
+  border-radius: 12rpx;
 }
 
 .goods-item:last-child {
@@ -432,6 +490,7 @@ export default {
   height: 120rpx;
   border-radius: 12rpx;
   margin-right: 20rpx;
+  background: #f5f5f5;
 }
 
 .goods-info {
@@ -444,11 +503,24 @@ export default {
   color: #333;
   display: block;
   margin-bottom: 10rpx;
+  line-height: 1.4;
+}
+
+.goods-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .goods-price {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #ff6b35;
+  font-weight: 600;
+}
+
+.goods-quantity {
+  font-size: 26rpx;
+  color: #666;
 }
 
 /* 订单底部 */
@@ -477,6 +549,7 @@ export default {
   font-size: 26rpx;
   font-weight: 500;
   min-width: 120rpx;
+  border: none;
 }
 
 .deliver-btn {
@@ -511,42 +584,6 @@ export default {
   color: #999;
 }
 
-/* 商家底栏 */
-.merchant-tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 120rpx;
-  background: #fff;
-  border-top: 1rpx solid #eee;
-  display: flex;
-  z-index: 9999;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.tab-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 24rpx;
-  transition: color 0.3s;
-}
-
-.tab-item .icon {
-  width: 52rpx;
-  height: 52rpx;
-  margin-bottom: 8rpx;
-}
-
-.tab-item.active {
-  color: #ff6b35;
-}
-
 /* 响应式调整 */
 @media (max-width: 750rpx) {
   .container {
@@ -560,6 +597,15 @@ export default {
 
   .order-item {
     padding: 25rpx;
+  }
+
+  .goods-item {
+    padding: 12rpx;
+  }
+
+  .goods-image {
+    width: 100rpx;
+    height: 100rpx;
   }
 }
 </style>
