@@ -49,6 +49,31 @@
       "style": {
         "navigationBarTitleText": "确认订单"
       }
+    },
+    {
+      "path": "pages/merchant/apply-shop",
+      "style": {
+        "navigationBarTitleText": "申请开店"
+      }
+    },
+    {
+      "path": "pages/merchant/shop-detail",
+      "style": {
+        "navigationBarTitleText": "店铺详情"
+      }
+    },
+    {
+      "path": "pages/merchant/goods-detail-merchant",
+      "style": {
+        "navigationBarTitleText": "商品详情"
+      }
+    },
+    {
+      "path": "pages/merchant/order-manage",
+      "style": {
+        "navigationBarTitleText": "订单管理",
+        "enablePullDownRefresh": true
+      }
     }
   ],
   "tabBar": {

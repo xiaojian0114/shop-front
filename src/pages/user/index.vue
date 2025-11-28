@@ -57,7 +57,6 @@
       </view>
     </view>
 
-    <!-- 空状态 -->
     <view v-if="list.length === 0" class="empty-state">
       <view class="empty-icon">空</view>
       <text class="empty-text">暂无商品 ~ 去商家上架吧！</text>
@@ -150,7 +149,6 @@ export default {
       uni.navigateTo({ url: `/pages/common/goods-detail?id=${g.id}` });
     },
 
-    // ------------------ 模糊搜索 ------------------
     onSearchInput(e) {
       clearTimeout(this.searchTimer);
       const keyword = e.detail.value || e;
@@ -161,12 +159,11 @@ export default {
 
     async search(keyword) {
       if (!keyword) {
-        this.initPage(); // 为空恢复列表
+        this.initPage();
         return;
       }
 
       try {
-        // GET 请求把 keyword 放到 data 中，而不是 params
         const data = await request.get("/user/products/search", { keyword });
         this.list = data || [];
         this.featuredList = this.list.slice(0, 3);

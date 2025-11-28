@@ -56,10 +56,10 @@
     </view>
 
     <!-- 底部装饰 -->
-    <view class="decoration-bottom">
+    <!-- <view class="decoration-bottom">
       <view class="book"></view>
       <view class="pencil"></view>
-    </view>
+    </view> -->
   </view>
 </template>
 
@@ -109,7 +109,7 @@ export default {
 
       // 3. 发送请求
       uni.request({
-        url: "http://localhost:8080" + url, // 完整地址，防止H5跨域问题
+        url: "http://localhost:8080" + url,
         method: "POST",
         data,
         header: { "Content-Type": "application/json" },
@@ -117,14 +117,13 @@ export default {
           if (res.data.code === 200) {
             const info = res.data.data;
 
-            // 关键修复：手动补全头像字段（后端不返回也没事！）
             const userInfoToSave = {
               userId: info.userId || info.id,
               nickname: info.nickname || "校园用户" + info.phone.slice(-4),
               phone: info.phone,
               role: info.role,
               token: info.token,
-              // 头像三重兜底
+
               avatar: info.avatar
                 ? info.avatar.startsWith("http")
                   ? info.avatar
@@ -132,7 +131,6 @@ export default {
                 : "https://mmbiz.qpic.cn/mmbiz_png/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG6xMBPrs7QfceDcoZGWweJ1shPv6V1ZM3Iow3kTRBxEIQY1g/0?wx_fmt=png",
             };
 
-            // 保存到本地
             uni.setStorageSync("token", info.token);
             uni.setStorageSync("userInfo", userInfoToSave);
 
@@ -141,7 +139,6 @@ export default {
               icon: "success",
             });
 
-            // 延迟跳转，体验更丝滑
             setTimeout(() => {
               const home =
                 info.role === "merchant"
@@ -167,7 +164,6 @@ export default {
     },
   },
 
-  // 已登录自动跳转首页
   onShow() {
     const token = uni.getStorageSync("token");
     const userInfo = uni.getStorageSync("userInfo");
@@ -366,14 +362,5 @@ export default {
   align-items: flex-end;
   padding: 0 40rpx;
 }
-.book::before {
-  content: "书";
-  font-size: 80rpx;
-  opacity: 0.7;
-}
-.pencil::before {
-  content: "铅笔";
-  font-size: 60rpx;
-  opacity: 0.7;
-}
 </style>
+//1

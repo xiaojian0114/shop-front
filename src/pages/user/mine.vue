@@ -142,7 +142,9 @@ export default {
 
   computed: {
     avatarUrl() {
+      console.log("avatarError:", this.avatarError);
       if (this.avatarError) return "/static/default-avatar.png";
+      console.log("this.userInfo:", this.userInfo);
 
       if (this.userInfo.avatar) {
         return this.userInfo.avatar.startsWith("http")
@@ -155,8 +157,8 @@ export default {
 
   onShow() {
     console.log("mine 页面 onShow 触发了");
-    this.loadUserInfo(); // 拉取用户信息
-    this.loadOrderStats(); // 拉取订单统计
+    this.loadUserInfo();
+    this.loadOrderStats();
   },
 
   onPullDownRefresh() {
