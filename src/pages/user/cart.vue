@@ -1,4 +1,3 @@
-<!-- pages/user/cart.vue 修复版 -->
 <template>
   <view class="cart-page">
     <!-- 头部 -->
@@ -80,7 +79,7 @@
       </view>
     </view>
 
-    <!-- 底部操作栏 - 调整位置 -->
+    <!-- 底部操作栏 -->
     <view class="footer" v-if="cartList.length">
       <view class="footer-content">
         <view class="left">
@@ -119,6 +118,8 @@
 </template>
 
 <script>
+import userApi from "@/api/user.js";
+
 export default {
   data() {
     return {
@@ -152,29 +153,24 @@ export default {
   methods: {
     // 加载购物车
     async loadCart() {
-      const token = uni.getStorageSync("token");
       uni.showLoading({ title: "加载中..." });
-      uni.request({
-        url: "http://localhost:8080/user/cart",
-        header: { Authorization: "Bearer " + token },
-        success: (res) => {
-          if (res.data.code === 200) {
-            this.cartList = res.data.data.map((item) => ({
-              id: item.id,
-              productId: item.productId,
-              productName: item.productName,
-              productImage: item.productImage || "/static/default.jpg",
-              price: Number(item.price),
-              num: item.num,
-              checked: true,
-              spec: item.spec || "默认规格",
-            }));
-          }
-        },
-        complete: () => {
-          uni.hideLoading();
-        },
-      });
+      try {
+        const cartData = await userApi.getCartList();
+        this.cartList = cartData.map((item) => ({
+          id: item.id,
+          productId: item.productId,
+          productName: item.productName,
+          productImage: item.productImage || "/static/default.jpg",
+          price: Number(item.price),
+          num: item.num,
+          checked: true,
+          spec: item.spec || "默认规格",
+        }));
+      } catch (error) {
+        console.log("加载购物车失败:", error);
+      } finally {
+        uni.hideLoading();
+      }
     },
 
     // 切换编辑模式
@@ -194,23 +190,19 @@ export default {
     },
 
     // 修改数量
-    changeNum(item, delta) {
+    async changeNum(item, delta) {
       const num = item.num + delta;
       if (num < 1) return;
 
       uni.showLoading({ title: "更新中..." });
-      uni.request({
-        url: "http://localhost:8080/user/cart/add",
-        method: "POST",
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        data: { productId: item.productId, num },
-        success: () => {
-          item.num = num;
-        },
-        complete: () => {
-          uni.hideLoading();
-        },
-      });
+      try {
+        await userApi.updateCartItem({ productId: item.productId, num });
+        item.num = num;
+      } catch (error) {
+        console.log("更新数量失败:", error);
+      } finally {
+        uni.hideLoading();
+      }
     },
 
     // 验证数量输入
@@ -222,36 +214,30 @@ export default {
     },
 
     // 删除单个
-    removeItem(item) {
+    async removeItem(item) {
       uni.showModal({
         title: "确认删除",
         content: "确定要删除此商品吗？",
         confirmColor: "#ff4444",
-        success: (e) => {
+        success: async (e) => {
           if (e.confirm) {
             uni.showLoading({ title: "删除中..." });
-            uni.request({
-              url: "http://localhost:8080/user/cart/delete",
-              method: "POST",
-              header: {
-                Authorization: "Bearer " + uni.getStorageSync("token"),
-              },
-              data: { productId: item.productId },
-              success: () => {
-                uni.showToast({ title: "删除成功", icon: "success" });
-                this.loadCart();
-              },
-              complete: () => {
-                uni.hideLoading();
-              },
-            });
+            try {
+              await userApi.deleteCartItem({ productId: item.productId });
+              uni.showToast({ title: "删除成功", icon: "success" });
+              this.loadCart();
+            } catch (error) {
+              console.log("删除失败:", error);
+            } finally {
+              uni.hideLoading();
+            }
           }
         },
       });
     },
 
     // 底部主按钮行为
-    handleAction() {
+    async handleAction() {
       if (!this.selectedCount) {
         uni.showToast({ title: "请选择商品", icon: "none" });
         return;
@@ -263,26 +249,23 @@ export default {
           title: "确认删除",
           content: `确定删除这 ${this.selectedCount} 件商品吗？`,
           confirmColor: "#ff4444",
-          success: (e) => {
+          success: async (e) => {
             if (e.confirm) {
               uni.showLoading({ title: "删除中..." });
-              const tasks = this.cartList
-                .filter((i) => i.checked)
-                .map((i) =>
-                  uni.request({
-                    url: "http://localhost:8080/user/cart/delete",
-                    method: "POST",
-                    header: {
-                      Authorization: "Bearer " + uni.getStorageSync("token"),
-                    },
-                    data: { productId: i.productId },
-                  })
-                );
-              Promise.all(tasks).then(() => {
+              try {
+                const productIds = this.cartList
+                  .filter((i) => i.checked)
+                  .map((i) => i.productId);
+
+                await userApi.batchDeleteCartItems(productIds);
                 uni.showToast({ title: "删除成功", icon: "success" });
                 this.loadCart();
                 this.isEditing = false;
-              });
+              } catch (error) {
+                console.log("批量删除失败:", error);
+              } finally {
+                uni.hideLoading();
+              }
             }
           },
         });

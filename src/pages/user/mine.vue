@@ -1,4 +1,3 @@
-<!-- pages/user/mine.vue -->
 <template>
   <view class="mine">
     <!-- 顶部背景 -->
@@ -125,6 +124,8 @@
 </template>
 
 <script>
+import userApi from "@/api/user.js";
+
 export default {
   data() {
     return {
@@ -168,57 +169,50 @@ export default {
   },
 
   methods: {
-    /** 调用 /user/info 获取个人信息 */
-    loadUserInfo(cb) {
+    /** 获取个人信息 */
+    async loadUserInfo(cb) {
       const token = uni.getStorageSync("token");
       if (!token) return;
 
       this.loading = true;
-      uni.request({
-        url: "http://localhost:8080/user/info",
-        header: { Authorization: "Bearer " + token },
-        success: (res) => {
-          if (res.data.code === 200) {
-            this.userInfo = res.data.data || {};
-            uni.setStorageSync("userInfo", this.userInfo); // 同步缓存
-            console.log("用户信息：", this.userInfo);
-          } else {
-            console.warn("获取用户信息失败：", res.data.msg);
-          }
-        },
-        fail: () => {
-          console.warn("获取用户信息接口请求失败");
-        },
-        complete: () => {
-          this.loading = false;
-          cb?.();
-        },
-      });
+      try {
+        const userInfo = await userApi.getUserInfo();
+        this.userInfo = userInfo || {};
+        uni.setStorageSync("userInfo", this.userInfo);
+        console.log("用户信息：", this.userInfo);
+      } catch (error) {
+        console.warn("获取用户信息失败：", error);
+      } finally {
+        this.loading = false;
+        cb?.();
+      }
     },
 
     /** 加载订单统计 */
-    loadOrderStats(cb) {
+    async loadOrderStats(cb) {
       const token = uni.getStorageSync("token");
       if (!token) return cb?.();
 
-      uni.request({
-        url: "http://localhost:8080/user/order/list",
-        header: { Authorization: "Bearer " + token },
-        data: { status: 0, page: 1, pageSize: 999 },
-        success: (res) => {
-          if (res.data.code === 200) {
-            const list = res.data.data?.list || [];
-            this.stats = {
-              waitPay: list.filter((i) => i.status === 1).length,
-              waitSend: list.filter((i) => i.status === 2).length,
-              waitReceive: list.filter((i) => i.status === 3).length,
-              finished: list.filter((i) => i.status === 4).length,
-            };
-            console.log("订单统计：", this.stats);
-          }
-        },
-        complete: () => cb?.(),
-      });
+      try {
+        const result = await userApi.getOrderList({
+          status: 0,
+          page: 1,
+          pageSize: 999,
+        });
+
+        const list = result?.list || [];
+        this.stats = {
+          waitPay: list.filter((i) => i.status === 1).length,
+          waitSend: list.filter((i) => i.status === 2).length,
+          waitReceive: list.filter((i) => i.status === 3).length,
+          finished: list.filter((i) => i.status === 4).length,
+        };
+        console.log("订单统计：", this.stats);
+      } catch (error) {
+        console.warn("获取订单统计失败：", error);
+      } finally {
+        cb?.();
+      }
     },
 
     goOrder(status) {

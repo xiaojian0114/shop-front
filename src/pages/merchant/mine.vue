@@ -100,6 +100,8 @@
 </template>
 
 <script>
+import merchantApi from "@/api/merchant.js";
+
 export default {
   data() {
     return {
@@ -109,16 +111,20 @@ export default {
       currentPath: "",
       isMerchant: false,
       avatarLoadError: false,
+      loading: false,
     };
   },
+
   onLoad() {
     this.initPage();
   },
+
   onShow() {
     this.loadMerchantInfo();
     this.loadOrderStats();
     this.initPage();
   },
+
   onPullDownRefresh() {
     this.loadMerchantInfo();
     this.loadOrderStats();
@@ -126,55 +132,45 @@ export default {
       uni.stopPullDownRefresh();
     }, 1000);
   },
+
   methods: {
     initPage() {
-      this.isMerchant = this.userInfo?.role === "merchant";
+      const userInfo = uni.getStorageSync("userInfo");
+      this.isMerchant = userInfo?.role === "merchant";
       const pages = getCurrentPages();
       this.currentPath = pages[pages.length - 1].route;
     },
 
     // 加载商家信息
     async loadMerchantInfo() {
+      if (this.loading) return;
+
+      this.loading = true;
       try {
-        const res = await uni.request({
-          url: "http://localhost:8080/merchant/merchant/info",
-          header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        });
+        const data = await merchantApi.getMerchantInfo();
+        this.userInfo = data.userInfo || {};
+        this.shopInfo = data.shopInfo || {};
 
-        if (res.data.code === 200) {
-          const data = res.data.data;
-          this.userInfo = data.userInfo || {};
-          this.shopInfo = data.shopInfo || {};
-
-          // 更新本地存储的用户信息
-          if (this.userInfo) {
-            uni.setStorageSync("userInfo", this.userInfo);
-          }
-
-          console.log("商家信息:", data);
-        } else {
-          uni.showToast({ title: res.data.msg || "加载失败", icon: "none" });
+        // 更新本地存储的用户信息
+        if (this.userInfo) {
+          uni.setStorageSync("userInfo", this.userInfo);
         }
+
+        console.log("商家信息:", data);
       } catch (error) {
         console.error("加载商家信息失败:", error);
         uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
       }
     },
 
     // 加载订单统计
     async loadOrderStats() {
       try {
-        const res = await uni.request({
-          url: "http://localhost:8080/merchant/order/stats",
-          header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        });
-
-        if (res.data.code === 200) {
-          this.orderStats = res.data.data;
-          console.log("订单统计:", this.orderStats);
-        } else {
-          console.warn("加载订单统计失败:", res.data.msg);
-        }
+        const data = await merchantApi.getOrderStats();
+        this.orderStats = data;
+        console.log("订单统计:", this.orderStats);
       } catch (error) {
         console.error("加载订单统计失败:", error);
       }
@@ -220,10 +216,12 @@ export default {
       };
       return classMap[status] || "status-pending";
     },
+
     goToOrderManage() {
       uni.navigateTo({ url: "/pages/merchant/order-manage" });
     },
   },
+
   computed: {
     avatarUrl() {
       // 如果加载失败或者没有头像，使用默认头像

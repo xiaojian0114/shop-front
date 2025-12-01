@@ -7,14 +7,13 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     open: true,
-    // 关键！正确的代理写法
+
     proxy: {
-      // 所有接口都走代理
       "/auth": {
         target: "http://localhost:8080",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path, // 保持路径不变
+        rewrite: (path) => path,
       },
       "/user": {
         target: "http://localhost:8080",

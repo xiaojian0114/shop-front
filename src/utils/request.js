@@ -1,5 +1,4 @@
-// src/utils/request.js
-const BASE_URL = "http://127.0.0.1:8080"; // 你的后端地址
+const BASE_URL = "http://localhost:8080";
 
 // 全局请求封装
 const request = (options) => {

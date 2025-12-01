@@ -65,7 +65,8 @@
 </template>
 
 <script>
-import request from "@/utils/request.js";
+import productApi from "@/api/product.js";
+import userApi from "@/api/user.js";
 
 export default {
   data() {
@@ -111,7 +112,7 @@ export default {
       }
 
       try {
-        const data = await request.get("/user/products");
+        const data = await productApi.getProductList();
         this.list = data || [];
         this.featuredList = this.list.slice(0, 3);
         this.startCarousel();
@@ -140,9 +141,11 @@ export default {
 
     async addCart(g) {
       try {
-        await request.post("/user/cart/add", { productId: g.id, num: 1 });
+        await userApi.addToCart({ productId: g.id, num: 1 });
         uni.showToast({ title: "加入成功", icon: "success" });
-      } catch (err) {}
+      } catch (err) {
+        console.log("加入购物车失败:", err);
+      }
     },
 
     toDetail(g) {
@@ -164,7 +167,7 @@ export default {
       }
 
       try {
-        const data = await request.get("/user/products/search", { keyword });
+        const data = await productApi.searchProducts({ keyword });
         this.list = data || [];
         this.featuredList = this.list.slice(0, 3);
         this.startCarousel();

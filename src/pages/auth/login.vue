@@ -46,24 +46,20 @@
         </text>
       </view>
 
-      <button @tap="submit" class="btn">
-        {{ isLogin ? "立即登录" : "注册并登录" }}
+      <button @tap="submit" class="btn" :disabled="loading">
+        {{ loading ? "处理中..." : isLogin ? "立即登录" : "注册并登录" }}
       </button>
 
       <view class="forgot-password" v-if="isLogin">
         <text>忘记密码？</text>
       </view>
     </view>
-
-    <!-- 底部装饰 -->
-    <!-- <view class="decoration-bottom">
-      <view class="book"></view>
-      <view class="pencil"></view>
-    </view> -->
   </view>
 </template>
 
 <script>
+import authApi from "@/api/auth.js";
+
 // H5 + 小程序双端完美跳转
 const goto = (path) => {
   // H5
@@ -88,11 +84,14 @@ export default {
       phone: "13800138000",
       password: "123456",
       role: "user", // user 或 merchant
+      loading: false,
     };
   },
 
   methods: {
     async submit() {
+      if (this.loading) return;
+
       // 1. 校验手机号
       if (!/^1[3-9]\d{9}$/.test(this.phone)) {
         return uni.showToast({ title: "请输入正确的手机号", icon: "none" });
@@ -101,66 +100,73 @@ export default {
         return uni.showToast({ title: "密码至少6位", icon: "none" });
       }
 
-      // 2. 构造请求参数
-      const url = this.isLogin ? "/auth/login" : "/auth/register";
-      const data = this.isLogin
-        ? { phone: this.phone, password: this.password }
-        : { phone: this.phone, password: this.password, role: this.role };
+      this.loading = true;
 
-      // 3. 发送请求
-      uni.request({
-        url: "http://localhost:8080" + url,
-        method: "POST",
-        data,
-        header: { "Content-Type": "application/json" },
-        success: (res) => {
-          if (res.data.code === 200) {
-            const info = res.data.data;
+      try {
+        const requestData = this.isLogin
+          ? { phone: this.phone, password: this.password }
+          : { phone: this.phone, password: this.password, role: this.role };
 
-            const userInfoToSave = {
-              userId: info.userId || info.id,
-              nickname: info.nickname || "校园用户" + info.phone.slice(-4),
-              phone: info.phone,
-              role: info.role,
-              token: info.token,
+        // 使用封装的API
+        const userInfo = this.isLogin
+          ? await authApi.login(requestData)
+          : await authApi.register(requestData);
 
-              avatar: info.avatar
-                ? info.avatar.startsWith("http")
-                  ? info.avatar
-                  : "http://localhost:8080" + info.avatar
-                : "https://mmbiz.qpic.cn/mmbiz_png/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG6xMBPrs7QfceDcoZGWweJ1shPv6V1ZM3Iow3kTRBxEIQY1g/0?wx_fmt=png",
-            };
+        // 处理登录/注册成功
+        this.handleAuthSuccess(userInfo);
+      } catch (error) {
+        console.log("登录/注册失败", error);
+        // 错误信息已经在request中统一处理，这里不需要重复显示
+      } finally {
+        this.loading = false;
+      }
+    },
 
-            uni.setStorageSync("token", info.token);
-            uni.setStorageSync("userInfo", userInfoToSave);
+    // 处理认证成功
+    handleAuthSuccess(userInfo) {
+      if (!userInfo) return;
 
-            uni.showToast({
-              title: this.isLogin ? "登录成功" : "注册成功",
-              icon: "success",
-            });
+      const userInfoToSave = {
+        userId: userInfo.userId || userInfo.id,
+        nickname:
+          userInfo.nickname || "校园用户" + (userInfo.phone || "").slice(-4),
+        phone: userInfo.phone,
+        role: userInfo.role,
+        token: userInfo.token,
+        avatar: this.formatAvatar(userInfo.avatar),
+      };
 
-            setTimeout(() => {
-              const home =
-                info.role === "merchant"
-                  ? "/pages/merchant/index"
-                  : "/pages/user/index";
-              goto(home);
-            }, 1000);
-          } else {
-            uni.showToast({
-              title: res.data.msg || "操作失败",
-              icon: "none",
-            });
-          }
-        },
-        fail: (err) => {
-          console.log("登录/注册失败", err);
-          uni.showToast({
-            title: "网络错误，请检查后端是否启动",
-            icon: "none",
-          });
-        },
+      // 保存用户信息
+      uni.setStorageSync("token", userInfo.token);
+      uni.setStorageSync("userInfo", userInfoToSave);
+
+      uni.showToast({
+        title: this.isLogin ? "登录成功" : "注册成功",
+        icon: "success",
       });
+
+      // 跳转到对应页面
+      setTimeout(() => {
+        const home =
+          userInfo.role === "merchant"
+            ? "/pages/merchant/index"
+            : "/pages/user/index";
+        goto(home);
+      }, 1000);
+    },
+
+    // 格式化头像URL
+    formatAvatar(avatar) {
+      if (!avatar) {
+        return "https://mmbiz.qpic.cn/mmbiz_png/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG6xMBPrs7QfceDcoZGWweJ1shPv6V1ZM3Iow3kTRBxEIQY1g/0?wx_fmt=png";
+      }
+
+      if (avatar.startsWith("http")) {
+        return avatar;
+      }
+
+      // 如果是相对路径，添加基础URL
+      return "http://localhost:8080" + avatar;
     },
   },
 
@@ -341,6 +347,12 @@ export default {
   box-shadow: 0 12rpx 30rpx rgba(74, 144, 226, 0.4);
 }
 
+.btn:disabled {
+  background: #ccc;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
 /* 忘记密码 */
 .forgot-password {
   margin-top: 40rpx;
@@ -363,4 +375,3 @@ export default {
   padding: 0 40rpx;
 }
 </style>
-//1
