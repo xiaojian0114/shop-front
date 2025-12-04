@@ -56,7 +56,8 @@
 </template>
 
 <script>
-import request from "@/utils/request.js";
+import userApi from "@/api/user.js";
+import productApi from "@/api/product.js";
 
 export default {
   data() {
@@ -104,7 +105,7 @@ export default {
   methods: {
     async loadShopInfo() {
       try {
-        const data = await request.get(`/user/shop/info/${this.shopId}`);
+        const data = await userApi.getShopInfo(this.shopId);
         this.shopInfo = data || {};
         uni.setNavigationBarTitle({ title: data.name || "店铺详情" });
       } catch (err) {
@@ -115,7 +116,7 @@ export default {
     async loadGoods(callback) {
       this.loading = true;
       try {
-        const res = await request.get("/user/products", {
+        const res = await productApi.getProductsByShop({
           shopId: this.shopId,
           page: this.page,
           pageSize: this.pageSize,
@@ -145,99 +146,107 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .shop-detail {
-  background: #f5f5f5;
+  background: $uni-bg-color-page;
   min-height: 100vh;
 }
 
 .shop-header {
-  background: #fff;
-  padding: 40rpx;
+  background: $uni-bg-color;
+  padding: $uni-padding-lg;
   display: flex;
   align-items: center;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1rpx solid $uni-border-color-light;
+  box-shadow: $uni-shadow-sm;
 }
 .avatar {
   width: 140rpx;
   height: 140rpx;
-  border-radius: 50%;
-  margin-right: 30rpx;
-  background: #eee;
+  border-radius: $uni-border-radius-circle;
+  margin-right: $uni-margin-base;
+  background: $uni-bg-color-grey;
 }
 .info .name {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #333;
+  font-size: $uni-font-size-h2;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
   display: block;
 }
 .info .desc {
-  font-size: 28rpx;
-  color: #666;
-  margin: 16rpx 0;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
+  margin: $uni-margin-xs 0;
   display: block;
 }
 .info .stats {
-  font-size: 24rpx;
-  color: #999;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
 }
 
 .section-title {
-  padding: 30rpx;
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-  background: #fff;
+  padding: $uni-padding-base;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
+  background: $uni-bg-color;
 }
 
 .goods-grid {
   display: flex;
   flex-wrap: wrap;
-  padding: 0 20rpx;
-  background: #f5f5f5;
+  padding: 0 $uni-padding-sm;
+  background: $uni-bg-color-page;
 }
 .goods-card {
   width: 48%;
   margin: 2% 1%;
-  background: #fff;
-  border-radius: 20rpx;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
   overflow: hidden;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: $uni-shadow-card;
+  transition: all $uni-transition-duration-base;
+}
+.goods-card:active {
+  transform: translateY(4rpx);
+  box-shadow: $uni-shadow-card-hover;
 }
 .goods-card image {
   width: 100%;
   height: 300rpx;
+  background: $uni-bg-color-grey;
 }
 .goods-card .info {
-  padding: 20rpx;
+  padding: $uni-padding-sm;
 }
 .goods-card .name {
-  font-size: 28rpx;
-  color: #333;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   height: 80rpx;
   line-height: 40rpx;
 }
 .goods-card .price {
-  color: #ff5500;
-  font-size: 32rpx;
-  font-weight: bold;
-  margin: 10rpx 0;
+  color: $uni-color-price;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-bold;
+  margin: $uni-spacing-xs 0;
 }
 .goods-card .sales {
-  font-size: 24rpx;
-  color: #999;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
 }
 
 .empty,
 .loading,
 .no-more {
   text-align: center;
-  padding: 60rpx 0;
-  color: #999;
-  font-size: 28rpx;
+  padding: $uni-padding-xl 0;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-base;
 }
 </style>

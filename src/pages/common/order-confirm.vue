@@ -69,6 +69,9 @@
 </template>
 
 <script>
+import userApi from "@/api/user.js";
+import orderApi from "@/api/order.js";
+
 export default {
   data() {
     return {
@@ -98,43 +101,35 @@ export default {
   methods: {
     // 加载要结算的商品
     async loadGoods() {
-      uni.request({
-        url: "http://localhost:8080/user/cart",
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        success: (res) => {
-          if (res.data.code === 200) {
-            const allCart = res.data.data || [];
-            this.goods = allCart
-              .filter((item) => this.ids.includes(item.productId))
-              .map((item) => ({
-                id: item.productId,
-                name: item.productName,
-                image: item.productImage,
-                price: Number(item.price),
-                num: item.num,
-              }));
-          }
-        },
-      });
+      try {
+        const allCart = await userApi.getCartList();
+        this.goods = allCart
+          .filter((item) => this.ids.includes(item.productId))
+          .map((item) => ({
+            id: item.productId,
+            name: item.productName,
+            image: item.productImage,
+            price: Number(item.price),
+            num: item.num,
+          }));
+      } catch (err) {
+        console.error("加载商品失败:", err);
+      }
     },
 
     // 加载用户昵称和电话
-    loadUserInfo() {
-      uni.request({
-        url: "http://localhost:8080/user/info",
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        success: (res) => {
-          if (res.data.code === 200) {
-            const info = res.data.data;
-            this.nickname = info.nickname || "";
-            this.phone = info.phone || "";
-          }
-        },
-      });
+    async loadUserInfo() {
+      try {
+        const info = await userApi.getUserInfo();
+        this.nickname = info.nickname || "";
+        this.phone = info.phone || "";
+      } catch (err) {
+        console.error("加载用户信息失败:", err);
+      }
     },
 
     // 提交订单
-    submitOrder() {
+    async submitOrder() {
       if (!this.nickname.trim()) {
         uni.showToast({ title: "请填写收货人姓名", icon: "none" });
         return;
@@ -149,136 +144,146 @@ export default {
       }
 
       this.submitting = true;
-      uni.request({
-        url: "http://localhost:8080/user/order/submit",
-        method: "POST",
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        data: {
+      try {
+        const orderNo = await orderApi.submitOrder({
           productIds: this.ids,
           address: this.address,
           nickname: this.nickname,
           phone: this.phone,
-        },
-        success: (res) => {
-          if (res.data.code === 200) {
-            uni.showToast({
-              title: "下单成功！订单号：" + res.data.data,
-              icon: "success",
-            });
-            setTimeout(() => {
-              uni.switchTab({ url: "/pages/user/mine" });
-            }, 1500);
-          } else {
-            uni.showToast({ title: res.data.msg || "下单失败", icon: "none" });
-          }
-        },
-        fail: () => {
-          uni.showToast({ title: "网络错误", icon: "none" });
-        },
-        complete: () => {
-          this.submitting = false;
-        },
-      });
+        });
+        uni.showToast({
+          title: "下单成功！订单号：" + orderNo,
+          icon: "success",
+        });
+        setTimeout(() => {
+          uni.switchTab({ url: "/pages/user/mine" });
+        }, 1500);
+      } catch (err) {
+        console.error("下单失败:", err);
+      } finally {
+        this.submitting = false;
+      }
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .order-confirm-page {
-  background: #f8f8f8;
+  background: $uni-bg-color-page;
   min-height: 100vh;
   padding-bottom: 140rpx;
 }
 
 .address-section,
 .contact-section {
-  background: #fff;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
+  background: $uni-bg-color;
+  padding: $uni-padding-base;
+  margin-bottom: $uni-margin-sm;
+  border-radius: $uni-border-radius-lg;
+  box-shadow: $uni-shadow-sm;
 }
 
 .label {
-  font-size: 32rpx;
-  color: #333;
-  margin-bottom: 20rpx;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
+  margin-bottom: $uni-margin-sm;
   display: block;
+  font-weight: $uni-font-weight-medium;
 }
 .address-input {
-  border: 2rpx solid #eee;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  font-size: 32rpx;
+  border: 2rpx solid $uni-border-color-light;
+  border-radius: $uni-border-radius-base;
+  padding: $uni-padding-sm;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
+  transition: all $uni-transition-duration-base;
+}
+.address-input:focus {
+  border-color: $uni-color-primary;
+  box-shadow: 0 0 0 4rpx rgba(255, 107, 0, 0.1);
 }
 
 .section-title {
-  padding: 20rpx 30rpx;
-  background: #fff;
-  font-size: 32rpx;
-  color: #666;
+  padding: $uni-padding-sm $uni-padding-base;
+  background: $uni-bg-color;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color-secondary;
+  font-weight: $uni-font-weight-medium;
 }
 
 .goods-item {
   display: flex;
   align-items: center;
-  background: #fff;
-  padding: 30rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  background: $uni-bg-color;
+  padding: $uni-padding-base;
+  border-bottom: 1rpx solid $uni-border-color-light;
 }
 .thumb {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 16rpx;
-  margin-right: 24rpx;
+  border-radius: $uni-border-radius-base;
+  margin-right: $uni-margin-sm;
+  background: $uni-bg-color-grey;
 }
 .info {
   flex: 1;
 }
 .name {
-  font-size: 32rpx;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .spec {
-  color: #999;
-  font-size: 28rpx;
-  margin-top: 10rpx;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-base;
+  margin-top: $uni-spacing-xs;
 }
 .total-price {
-  color: #ff5500;
-  font-size: 36rpx;
-  font-weight: bold;
+  color: $uni-color-price;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-bold;
 }
 
 .total-section {
-  background: #fff;
-  padding: 30rpx;
-  margin: 20rpx 0;
+  background: $uni-bg-color;
+  padding: $uni-padding-base;
+  margin: $uni-margin-sm 0;
+  border-radius: $uni-border-radius-lg;
+  box-shadow: $uni-shadow-sm;
 }
 .total-line {
   display: flex;
   justify-content: space-between;
-  font-size: 36rpx;
+  align-items: center;
+  font-size: $uni-font-size-xl;
 }
 .total-line .price {
-  color: #ff5500;
-  font-weight: bold;
+  color: $uni-color-price;
+  font-weight: $uni-font-weight-bold;
 }
 
 .submit-btn {
   position: fixed;
-  bottom: 40rpx;
-  left: 40rpx;
-  right: 40rpx;
+  bottom: $uni-padding-lg;
+  left: $uni-padding-lg;
+  right: $uni-padding-lg;
   height: 100rpx;
   line-height: 100rpx;
-  background: linear-gradient(135deg, #ff6b00, #ff8b3d);
-  color: #fff;
-  font-size: 36rpx;
-  border-radius: 50rpx;
-  box-shadow: 0 10rpx 30rpx rgba(255, 107, 0, 0.4);
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  border-radius: $uni-border-radius-round;
+  box-shadow: $uni-shadow-button;
+  transition: all $uni-transition-duration-base;
+}
+.submit-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 </style>

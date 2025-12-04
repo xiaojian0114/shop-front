@@ -40,15 +40,15 @@
     </view>
 
     <!-- 编辑弹窗 -->
-    <view class="modal" v-if="showEditModal" @tap="showEditModal = false">
-      <view class="modal-content" @tap.stop>
+    <view class="modal" v-if="showEditModal">
+      <view class="modal-mask" @tap="showEditModal = false"></view>
+      <view class="modal-content">
         <text class="modal-title">编辑商品</text>
 
         <view class="form-item">
           <text class="label">商品名称</text>
           <input
-            :value="editForm.name"
-            @input="onInput('name', $event)"
+            v-model="editForm.name"
             placeholder="请输入商品名称"
             class="form-input"
           />
@@ -57,8 +57,7 @@
         <view class="form-item">
           <text class="label">商品价格</text>
           <input
-            :value="editForm.price"
-            @input="onInput('price', $event)"
+            v-model="editForm.price"
             placeholder="请输入商品价格"
             type="number"
             class="form-input"
@@ -68,8 +67,7 @@
         <view class="form-item">
           <text class="label">商品库存</text>
           <input
-            :value="editForm.stock"
-            @input="onInput('stock', $event)"
+            v-model="editForm.stock"
             placeholder="请输入商品库存"
             type="number"
             class="form-input"
@@ -97,6 +95,8 @@
 </template>
 
 <script>
+import merchantApi from "@/api/merchant.js";
+
 export default {
   data() {
     return {
@@ -120,69 +120,45 @@ export default {
   methods: {
     async loadProductDetail() {
       try {
-        const res = await uni.request({
-          url: `http://localhost:8080/merchant/product/${this.productId}`,
-          header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        });
-
-        if (res.data.code === 200) {
-          this.product = res.data.data;
-          // 初始化编辑表单
-          this.editForm = {
-            id: this.product.id || "",
-            name: this.product.name || "",
-            price: this.product.price || "",
-            stock: this.product.stock || "",
-            description: this.product.description || "",
-            image: this.product.image || "",
-          };
-        } else {
-          uni.showToast({ title: res.data.msg || "加载失败", icon: "none" });
-        }
+        this.product = await merchantApi.product.getDetail(this.productId);
+        // 初始化编辑表单
+        this.editForm = {
+          id: this.product.id || "",
+          name: this.product.name || "",
+          price: this.product.price || "",
+          stock: this.product.stock || "",
+          description: this.product.description || "",
+          image: this.product.image || "",
+        };
       } catch (error) {
         console.error("加载商品详情失败:", error);
         uni.showToast({ title: "加载失败", icon: "none" });
       }
     },
 
-    // 处理输入事件
-    onInput(field, e) {
-      this.editForm[field] = e.detail.value;
-    },
-
-    toggleSaleStatus() {
+    async toggleSaleStatus() {
       const action = this.product.isOnSale === 1 ? "off" : "on";
       const actionText = this.product.isOnSale === 1 ? "下架" : "上架";
 
       uni.showModal({
         title: `确认${actionText}`,
         content: `确定要${actionText}这个商品吗？`,
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            uni.request({
-              url: `http://localhost:8080/merchant/product/${action}/${this.productId}`,
-              method: "PUT",
-              header: {
-                Authorization: "Bearer " + uni.getStorageSync("token"),
-              },
-              success: (res) => {
-                if (res.data.code === 200) {
-                  uni.showToast({
-                    title: `${actionText}成功`,
-                    icon: "success",
-                  });
-                  this.loadProductDetail(); // 重新加载数据
-                } else {
-                  uni.showToast({
-                    title: res.data.msg || `${actionText}失败`,
-                    icon: "none",
-                  });
-                }
-              },
-              fail: () => {
-                uni.showToast({ title: `${actionText}失败`, icon: "none" });
-              },
-            });
+            try {
+              if (action === "off") {
+                await merchantApi.product.offSale(this.productId);
+              } else {
+                await merchantApi.product.onSale(this.productId);
+              }
+              uni.showToast({
+                title: `${actionText}成功`,
+                icon: "success",
+              });
+              this.loadProductDetail(); // 重新加载数据
+            } catch (err) {
+              console.error(`${actionText}失败:`, err);
+            }
           }
         },
       });
@@ -191,42 +167,19 @@ export default {
     chooseImage() {
       uni.chooseImage({
         count: 1,
-        success: (res) => {
-          uni.showLoading({ title: "上传中..." });
-
-          uni.uploadFile({
-            url: "http://localhost:8080/merchant/upload",
-            filePath: res.tempFilePaths[0],
-            name: "file",
-            header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-            success: (r) => {
-              uni.hideLoading();
-              try {
-                const data =
-                  typeof r.data === "string" ? JSON.parse(r.data) : r.data;
-                if (data.code === 200) {
-                  this.editForm.image = data.data;
-                  uni.showToast({ title: "上传成功", icon: "success" });
-                } else {
-                  uni.showToast({
-                    title: data.msg || "上传失败",
-                    icon: "none",
-                  });
-                }
-              } catch (e) {
-                uni.showToast({ title: "上传失败", icon: "none" });
-              }
-            },
-            fail: () => {
-              uni.hideLoading();
-              uni.showToast({ title: "上传失败", icon: "none" });
-            },
-          });
+        success: async (res) => {
+          try {
+            const url = await merchantApi.uploadImage(res.tempFilePaths[0]);
+            this.editForm.image = url;
+            uni.showToast({ title: "上传成功", icon: "success" });
+          } catch (err) {
+            console.error("上传失败:", err);
+          }
         },
       });
     },
 
-    submitEdit() {
+    async submitEdit() {
       if (!this.editForm.name.trim()) {
         return uni.showToast({ title: "请输入商品名称", icon: "none" });
       }
@@ -237,184 +190,198 @@ export default {
         return uni.showToast({ title: "请输入有效的库存", icon: "none" });
       }
 
-      uni.request({
-        url: "http://localhost:8080/merchant/product/update",
-        method: "PUT",
-        header: {
-          Authorization: "Bearer " + uni.getStorageSync("token"),
-          "Content-Type": "application/json",
-        },
-        data: this.editForm,
-        success: (res) => {
-          if (res.data.code === 200) {
-            uni.showToast({ title: "修改成功", icon: "success" });
-            this.showEditModal = false;
-            this.loadProductDetail(); // 重新加载数据
-          } else {
-            uni.showToast({ title: res.data.msg || "修改失败", icon: "none" });
-          }
-        },
-        fail: () => {
-          uni.showToast({ title: "修改失败", icon: "none" });
-        },
-      });
+      try {
+        await merchantApi.product.update(this.editForm);
+        uni.showToast({ title: "修改成功", icon: "success" });
+        this.showEditModal = false;
+        this.loadProductDetail(); // 重新加载数据
+      } catch (err) {
+        console.error("修改失败:", err);
+      }
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
-  background: #f5f7fa;
+  background: $uni-bg-color-page;
   min-height: 100vh;
 }
 
 .goods-detail {
-  padding: 30rpx;
+  padding: $uni-padding-base;
 }
 
 .goods-image-section {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 40rpx;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-lg;
   text-align: center;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: $uni-margin-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .goods-image {
   width: 400rpx;
   height: 400rpx;
-  border-radius: 20rpx;
+  border-radius: $uni-border-radius-lg;
 }
 
 .goods-info {
-  margin-bottom: 30rpx;
+  margin-bottom: $uni-margin-base;
 }
 
 .info-card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 40rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-lg;
+  box-shadow: $uni-shadow-sm;
 }
 
 .goods-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
   display: block;
-  margin-bottom: 20rpx;
+  margin-bottom: $uni-margin-sm;
 }
 
 .goods-price {
-  font-size: 48rpx;
-  font-weight: bold;
-  color: #ff6b35;
+  font-size: $uni-font-size-h1;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-color-primary;
   display: block;
-  margin-bottom: 30rpx;
+  margin-bottom: $uni-margin-base;
 }
 
 .goods-meta {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30rpx;
+  margin-bottom: $uni-margin-base;
 }
 
 .meta-item {
-  font-size: 28rpx;
-  color: #666;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
 }
 
 .action-buttons {
   display: flex;
-  gap: 20rpx;
+  gap: $uni-margin-sm;
 }
 
 .action-btn {
   flex: 1;
   height: 80rpx;
-  border-radius: 16rpx;
-  font-size: 30rpx;
-  font-weight: 500;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-medium;
+  transition: all $uni-transition-duration-base;
 }
 
 .edit-btn {
-  background: #4a90e2;
-  color: #fff;
+  background: $uni-color-info;
+  color: $uni-text-color-inverse;
 }
 
 .off-btn {
-  background: #ff4444;
-  color: #fff;
+  background: $uni-color-error;
+  color: $uni-text-color-inverse;
 }
 
 .on-btn {
-  background: #07c160;
-  color: #fff;
+  background: $uni-color-success;
+  color: $uni-text-color-inverse;
+}
+
+.action-btn:active {
+  transform: translateY(2rpx);
+  opacity: 0.9;
 }
 
 /* 编辑弹窗样式 */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
-  padding: 40rpx;
+  z-index: $uni-z-index-modal;
+  padding: $uni-padding-lg;
+}
+
+.modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
 .modal-content {
+  position: relative;
+  z-index: 2;
   width: 100%;
   max-width: 600rpx;
-  background: #fff;
-  border-radius: 24rpx;
-  padding: 50rpx 40rpx;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-xl;
+  padding: 50rpx $uni-padding-lg;
   max-height: 80vh;
   overflow-y: auto;
+  box-shadow: $uni-shadow-lg;
 }
 
 .modal-title {
   text-align: center;
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 40rpx;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
+  margin-bottom: $uni-padding-lg;
 }
 
 .form-item {
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-padding-lg;
 }
 
 .label {
-  font-size: 30rpx;
-  color: #333;
-  margin-bottom: 18rpx;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  margin-bottom: $uni-margin-xs;
   display: block;
-  font-weight: 500;
+  font-weight: $uni-font-weight-medium;
 }
 
 .form-input {
   width: 100%;
-  border: 2rpx solid #e5e5e5;
-  background: #fafafa;
-  padding: 24rpx 28rpx;
-  border-radius: 16rpx;
-  font-size: 30rpx;
-  color: #333;
+  border: 2rpx solid $uni-border-color-light;
+  background: $uni-bg-color-grey;
+  padding: $uni-padding-sm $uni-padding-base;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
   box-sizing: border-box;
+  transition: all $uni-transition-duration-base;
+}
+
+.form-input:focus {
+  border-color: $uni-color-primary;
+  box-shadow: 0 0 0 4rpx rgba(255, 107, 0, 0.1);
 }
 
 .image-preview {
   width: 200rpx;
   height: 200rpx;
-  border-radius: 20rpx;
-  background: #f2f2f2;
+  border-radius: $uni-border-radius-lg;
+  background: $uni-bg-color-grey;
   overflow: hidden;
   position: relative;
-  border: 2rpx dashed #e5e5e5;
+  border: 2rpx dashed $uni-border-color;
+  transition: all $uni-transition-duration-base;
+}
+
+.image-preview:active {
+  border-color: $uni-color-primary;
+  background: rgba(255, 107, 0, 0.05);
 }
 
 .preview-image {
@@ -428,34 +395,41 @@ export default {
   bottom: 0;
   width: 100%;
   background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  color: $uni-text-color-inverse;
   text-align: center;
-  font-size: 24rpx;
-  padding: 10rpx 0;
+  font-size: $uni-font-size-sm;
+  padding: $uni-padding-xs 0;
 }
 
 .modal-actions {
   display: flex;
-  gap: 20rpx;
-  margin-top: 20rpx;
+  gap: $uni-margin-sm;
+  margin-top: $uni-margin-sm;
 }
 
 .cancel-btn,
 .confirm-btn {
   flex: 1;
   height: 80rpx;
-  border-radius: 16rpx;
-  font-size: 30rpx;
-  font-weight: 500;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-medium;
+  transition: all $uni-transition-duration-base;
 }
 
 .cancel-btn {
-  background: #f1f1f1;
-  color: #666;
+  background: $uni-bg-color-grey;
+  color: $uni-text-color-secondary;
 }
 
 .confirm-btn {
-  background: #ff6b35;
-  color: #fff;
+  background: $uni-color-primary;
+  color: $uni-text-color-inverse;
+  box-shadow: $uni-shadow-button;
+}
+
+.confirm-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 </style>

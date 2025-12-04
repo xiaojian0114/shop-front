@@ -104,6 +104,8 @@
 </template>
 
 <script>
+import merchantApi from "@/api/merchant.js";
+
 export default {
   data() {
     return {
@@ -155,17 +157,8 @@ export default {
     // 加载订单统计
     async loadOrderStats() {
       try {
-        const res = await uni.request({
-          url: "http://localhost:8080/merchant/order/stats",
-          header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        });
-
-        if (res.data.code === 200) {
-          this.orderStats = res.data.data;
-          console.log("订单统计:", this.orderStats);
-        } else {
-          console.warn("加载订单统计失败:", res.data.msg);
-        }
+        this.orderStats = await merchantApi.getOrderStats();
+        console.log("订单统计:", this.orderStats);
       } catch (error) {
         console.error("加载订单统计失败:", error);
       }
@@ -174,35 +167,24 @@ export default {
     async loadOrders() {
       try {
         console.log("开始加载订单列表...");
-        const res = await uni.request({
-          url: "http://localhost:8080/merchant/orders",
-          header: { Authorization: "Bearer " + uni.getStorageSync("token") },
+        const orders = await merchantApi.order.getList();
+        console.log("订单列表响应:", orders);
+
+        this.orders = orders || [];
+        console.log("原始订单数据:", this.orders);
+
+        // 处理订单数据，确保格式统一
+        this.orders = this.orders.map((order) => {
+          const processedOrder = { ...order };
+
+          // 调试输出
+          console.log(`订单 ${order.id} 的 items:`, order.items);
+          console.log(`订单 ${order.id} 的 orderItems:`, order.orderItems);
+
+          return processedOrder;
         });
 
-        console.log("订单列表响应:", res);
-
-        if (res.data.code === 200) {
-          this.orders = res.data.data || [];
-          console.log("原始订单数据:", this.orders);
-
-          // 处理订单数据，确保格式统一
-          this.orders = this.orders.map((order) => {
-            const processedOrder = { ...order };
-
-            // 调试输出
-            console.log(`订单 ${order.id} 的 items:`, order.items);
-            console.log(`订单 ${order.id} 的 orderItems:`, order.orderItems);
-
-            return processedOrder;
-          });
-
-          console.log("处理后的订单数据:", this.orders);
-        } else {
-          uni.showToast({
-            title: res.data.msg || "加载订单失败",
-            icon: "none",
-          });
-        }
+        console.log("处理后的订单数据:", this.orders);
       } catch (error) {
         console.error("加载订单失败:", error);
         uni.showToast({ title: "加载订单失败", icon: "none" });
@@ -275,37 +257,20 @@ export default {
     },
 
     // 发货
-    deliverOrder(orderId) {
+    async deliverOrder(orderId) {
       uni.showModal({
         title: "确认发货",
         content: "确定要发货吗？",
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            uni.showLoading({ title: "发货中..." });
-            uni.request({
-              url: `http://localhost:8080/merchant/order/deliver/${orderId}`,
-              method: "PUT",
-              header: {
-                Authorization: "Bearer " + uni.getStorageSync("token"),
-              },
-              success: (res) => {
-                uni.hideLoading();
-                if (res.data.code === 200) {
-                  uni.showToast({ title: "发货成功", icon: "success" });
-                  this.loadOrders(); // 重新加载订单列表
-                  this.loadOrderStats(); // 重新加载统计
-                } else {
-                  uni.showToast({
-                    title: res.data.msg || "发货失败",
-                    icon: "none",
-                  });
-                }
-              },
-              fail: () => {
-                uni.hideLoading();
-                uni.showToast({ title: "发货失败", icon: "none" });
-              },
-            });
+            try {
+              await merchantApi.order.deliver(orderId);
+              uni.showToast({ title: "发货成功", icon: "success" });
+              this.loadOrders(); // 重新加载订单列表
+              this.loadOrderStats(); // 重新加载统计
+            } catch (error) {
+              console.error("发货失败:", error);
+            }
           }
         },
       });
@@ -346,80 +311,80 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
-  padding: 30rpx;
+  padding: $uni-padding-base;
   padding-bottom: 140rpx;
-  background: #f5f7fa;
+  background: $uni-bg-color-page;
   min-height: 100vh;
 }
 
 /* 订单统计 */
 .order-stats {
   display: flex;
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  margin-bottom: $uni-margin-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .stat-item {
   flex: 1;
   text-align: center;
-  padding: 20rpx 0;
+  padding: $uni-margin-sm 0;
 }
 
 .stat-number {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #ff6b35;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-color-primary;
   display: block;
-  margin-bottom: 10rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .stat-label {
-  font-size: 26rpx;
-  color: #666;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-secondary;
 }
 
 /* 订单筛选 */
 .order-filter {
   display: flex;
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 20rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-margin-sm;
+  margin-bottom: $uni-margin-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .filter-item {
   flex: 1;
   text-align: center;
-  padding: 20rpx 0;
-  font-size: 28rpx;
-  color: #666;
-  border-radius: 12rpx;
-  transition: all 0.3s;
+  padding: $uni-margin-sm 0;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
+  border-radius: $uni-border-radius-base;
+  transition: all $uni-transition-duration-base;
 }
 
 .filter-item.active {
-  background: #ff6b35;
-  color: #fff;
+  background: $uni-color-primary;
+  color: $uni-text-color-inverse;
 }
 
 /* 订单列表 */
 .order-list {
   display: flex;
   flex-direction: column;
-  gap: 30rpx;
+  gap: $uni-margin-base;
 }
 
 .order-item {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .order-header {
@@ -427,44 +392,44 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 25rpx;
-  padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding-bottom: $uni-margin-sm;
+  border-bottom: 1rpx solid $uni-border-color-light;
 }
 
 .order-number {
-  font-size: 28rpx;
-  color: #666;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
 }
 
 .order-status {
-  font-size: 26rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 20rpx;
+  font-size: $uni-font-size-sm;
+  padding: $uni-spacing-xs $uni-margin-sm;
+  border-radius: $uni-border-radius-lg;
 }
 
 .status-pending {
   background: rgba(255, 153, 0, 0.1);
-  color: #ff9900;
+  color: $uni-color-warning;
 }
 
 .status-waiting {
   background: rgba(255, 107, 53, 0.1);
-  color: #ff6b35;
+  color: $uni-color-primary;
 }
 
 .status-delivered {
   background: rgba(74, 144, 226, 0.1);
-  color: #4a90e2;
+  color: $uni-color-info;
 }
 
 .status-completed {
   background: rgba(7, 193, 96, 0.1);
-  color: #07c160;
+  color: $uni-color-success;
 }
 
 .status-cancelled {
   background: rgba(153, 153, 153, 0.1);
-  color: #999;
+  color: $uni-text-color-placeholder;
 }
 
 /* 订单商品 */
@@ -475,10 +440,10 @@ export default {
 .goods-item {
   display: flex;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: $uni-margin-sm;
   padding: 15rpx;
-  background: #f9f9f9;
-  border-radius: 12rpx;
+  background: $uni-bg-color-grey;
+  border-radius: $uni-border-radius-base;
 }
 
 .goods-item:last-child {
@@ -488,9 +453,9 @@ export default {
 .goods-image {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 12rpx;
-  margin-right: 20rpx;
-  background: #f5f5f5;
+  border-radius: $uni-border-radius-base;
+  margin-right: $uni-margin-sm;
+  background: $uni-bg-color-grey;
 }
 
 .goods-info {
@@ -498,11 +463,11 @@ export default {
 }
 
 .goods-name {
-  font-size: 30rpx;
-  font-weight: 500;
-  color: #333;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-medium;
+  color: $uni-text-color;
   display: block;
-  margin-bottom: 10rpx;
+  margin-bottom: $uni-spacing-xs;
   line-height: 1.4;
 }
 
@@ -513,14 +478,14 @@ export default {
 }
 
 .goods-price {
-  font-size: 28rpx;
-  color: #ff6b35;
-  font-weight: 600;
+  font-size: $uni-font-size-base;
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-semibold;
 }
 
 .goods-quantity {
-  font-size: 26rpx;
-  color: #666;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-secondary;
 }
 
 /* 订单底部 */
@@ -528,14 +493,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #f0f0f0;
+  padding-top: $uni-margin-sm;
+  border-top: 1rpx solid $uni-border-color-light;
 }
 
 .order-total {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
 }
 
 .order-actions {
@@ -544,22 +509,34 @@ export default {
 }
 
 .action-btn {
-  padding: 12rpx 24rpx;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  font-weight: 500;
+  padding: $uni-padding-xs $uni-padding-sm;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-sm;
+  font-weight: $uni-font-weight-medium;
   min-width: 120rpx;
   border: none;
+  transition: all $uni-transition-duration-base;
 }
 
 .deliver-btn {
-  background: #ff6b35;
-  color: #fff;
+  background: $uni-color-primary;
+  color: $uni-text-color-inverse;
+  box-shadow: $uni-shadow-button;
+}
+
+.deliver-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 .detail-btn {
-  background: #f1f1f1;
-  color: #666;
+  background: $uni-bg-color-grey;
+  color: $uni-text-color-secondary;
+}
+
+.detail-btn:active {
+  transform: translateY(2rpx);
+  opacity: 0.9;
 }
 
 /* 空状态 */
@@ -568,26 +545,26 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120rpx 40rpx;
+  padding: 120rpx $uni-padding-lg;
   text-align: center;
 }
 
 .empty-img {
   width: 200rpx;
   height: 200rpx;
-  margin-bottom: 30rpx;
+  margin-bottom: $uni-margin-base;
   opacity: 0.6;
 }
 
 .empty-text {
-  font-size: 28rpx;
-  color: #999;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-placeholder;
 }
 
 /* 响应式调整 */
 @media (max-width: 750rpx) {
   .container {
-    padding: 20rpx;
+    padding: $uni-margin-sm;
     padding-bottom: 140rpx;
   }
 

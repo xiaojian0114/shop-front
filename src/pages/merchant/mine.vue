@@ -252,24 +252,24 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
   padding-bottom: 140rpx;
-  background: #f5f7fa;
+  background: $uni-bg-color-page;
   min-height: 100vh;
 }
 
 .mine {
-  background: #fcfcfc;
+  background: $uni-bg-color;
   min-height: 100vh;
 }
 
 /* 用户信息区域 */
 .user-info {
-  padding: 80rpx 0 60rpx;
+  padding: 80rpx 0 $uni-padding-xl;
   text-align: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
   position: relative;
 }
 
@@ -278,103 +278,103 @@ export default {
   height: 180rpx;
   border-radius: 90rpx;
   border: 6rpx solid rgba(255, 255, 255, 0.8);
-  margin-bottom: 20rpx;
-  background: #fff;
+  margin-bottom: $uni-margin-sm;
+  background: $uni-bg-color;
 }
 
 .nickname {
-  font-size: 40rpx;
-  font-weight: bold;
+  font-size: $uni-font-size-h2;
+  font-weight: $uni-font-weight-bold;
   display: block;
-  margin-bottom: 10rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .shop-name {
-  font-size: 32rpx;
+  font-size: $uni-font-size-lg;
   opacity: 0.9;
   display: block;
   margin-bottom: 15rpx;
 }
 
 .shop-status {
-  font-size: 26rpx;
-  padding: 8rpx 24rpx;
-  border-radius: 20rpx;
+  font-size: $uni-font-size-sm;
+  padding: $uni-spacing-xs $uni-padding-sm;
+  border-radius: $uni-border-radius-lg;
   background: rgba(255, 255, 255, 0.2);
   display: inline-block;
 }
 
 .status-success {
   background: rgba(7, 193, 96, 0.2);
-  color: #07c160;
+  color: $uni-color-success;
 }
 
 .status-pending {
   background: rgba(255, 153, 0, 0.2);
-  color: #ff9900;
+  color: $uni-color-warning;
 }
 
 .status-rejected {
   background: rgba(255, 68, 68, 0.2);
-  color: #ff4444;
+  color: $uni-color-error;
 }
 
 /* 统计卡片 */
 .stats-cards {
   display: flex;
-  padding: 30rpx;
-  gap: 20rpx;
-  background: #fff;
-  margin: -40rpx 30rpx 30rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.08);
+  padding: $uni-padding-base;
+  gap: $uni-margin-sm;
+  background: transparent;
+  margin: -40rpx $uni-margin-base $uni-margin-base;
+  border-radius: $uni-border-radius-lg;
+  box-shadow: $uni-shadow-card;
   position: relative;
-  z-index: 2;
+  z-index: $uni-z-index-base;
 }
 
 .stat-card {
   flex: 1;
   text-align: center;
-  padding: 30rpx 20rpx;
-  background: #f8f9fa;
-  border-radius: 16rpx;
-  border: 2rpx solid #e9ecef;
+  padding: $uni-padding-base $uni-padding-sm;
+  background: $uni-bg-color-grey;
+  border-radius: $uni-border-radius-base;
+  border: 2rpx solid $uni-border-color-light;
 }
 
 .stat-number {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
   display: block;
-  margin-bottom: 10rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .stat-label {
-  font-size: 24rpx;
-  color: #666;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-secondary;
 }
 
 /* 菜单区域 */
 .menu {
-  margin: 0 30rpx;
-  background: #fff;
-  border-radius: 24rpx;
+  margin: 0 $uni-margin-base;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-xl;
   overflow: hidden;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.08);
+  box-shadow: $uni-shadow-card;
 }
 
 .item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 36rpx 40rpx;
-  border-bottom: 1rpx solid #f0f0f0;
-  font-size: 32rpx;
-  transition: background-color 0.3s;
+  padding: 36rpx $uni-padding-lg;
+  border-bottom: 1rpx solid $uni-border-color-light;
+  font-size: $uni-font-size-lg;
+  transition: background-color $uni-transition-duration-base;
 }
 
 .item:active {
-  background: #f8f9fa;
+  background: $uni-bg-color-hover;
 }
 
 .item:last-child {
@@ -384,7 +384,7 @@ export default {
 .item-left {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: $uni-margin-sm;
 }
 
 .item-icon {
@@ -393,8 +393,8 @@ export default {
 }
 
 .arrow {
-  color: #ccc;
-  font-size: 28rpx;
+  color: $uni-border-color;
+  font-size: $uni-font-size-base;
 }
 
 /* 底栏样式 */
@@ -404,11 +404,11 @@ export default {
   right: 0;
   bottom: 0;
   height: 120rpx;
-  background: #fff;
-  border-top: 1rpx solid #eee;
+  background: $uni-bg-color;
+  border-top: 1rpx solid $uni-border-color-light;
   display: flex;
-  z-index: 9999;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  z-index: $uni-z-index-fixed;
+  box-shadow: $uni-shadow-lg;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -418,25 +418,25 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
-  font-size: 24rpx;
-  transition: color 0.3s;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-sm;
+  transition: color $uni-transition-duration-base;
 }
 
 .tab-item .icon {
   width: 52rpx;
   height: 52rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .tab-item.active {
-  color: #ff6b35;
+  color: $uni-color-primary;
 }
 
 /* 响应式调整 */
 @media (max-width: 750rpx) {
   .user-info {
-    padding: 60rpx 0 40rpx;
+    padding: $uni-padding-xl 0 $uni-padding-lg;
   }
 
   .avatar {
@@ -445,16 +445,16 @@ export default {
   }
 
   .stats-cards {
-    margin: -30rpx 20rpx 20rpx;
+    margin: -30rpx $uni-margin-sm $uni-margin-sm;
     padding: 25rpx;
   }
 
   .menu {
-    margin: 0 20rpx;
+    margin: 0 $uni-margin-sm;
   }
 
   .item {
-    padding: 30rpx;
+    padding: $uni-padding-base;
   }
 }
 </style>

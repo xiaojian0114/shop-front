@@ -76,4 +76,13 @@ export default {
   updateCartItem(data) {
     return request.post("/user/cart/add", data);
   },
+
+  /**
+   * 获取店铺信息
+   * @param {number} shopId - 店铺ID
+   * @returns {Promise}
+   */
+  getShopInfo(shopId) {
+    return request.get(`/user/shop/info/${shopId}`);
+  },
 };

@@ -180,12 +180,7 @@ export default {
 };
 </script>
 
-<style scoped>
-.home {
-  background: linear-gradient(135deg, #f5f9ff 0%, #e8f4ff 100%);
-  min-height: 100vh;
-  position: relative;
-}
+<style lang="scss" scoped>
 .home {
   background: linear-gradient(135deg, #f5f9ff 0%, #e8f4ff 100%);
   min-height: 100vh;
@@ -200,7 +195,7 @@ export default {
 }
 .circle {
   position: absolute;
-  border-radius: 50%;
+  border-radius: $uni-border-radius-circle;
   background: rgba(74, 144, 226, 0.1);
 }
 .circle1 {
@@ -217,46 +212,47 @@ export default {
   background: rgba(255, 107, 0, 0.1);
 }
 .search-bar {
-  padding: 30rpx 24rpx 20rpx;
+  padding: $uni-padding-base $uni-padding-sm $uni-padding-sm;
 }
 .search-container {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-radius: 50rpx;
-  padding: 0 30rpx;
-  box-shadow: 0 8rpx 24rpx rgba(74, 144, 226, 0.15);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-round;
+  padding: 0 $uni-padding-base;
+  box-shadow: $uni-shadow-base;
 }
 .search-icon {
-  font-size: 32rpx;
-  margin-right: 20rpx;
-  color: #9ca3af;
+  font-size: $uni-font-size-lg;
+  margin-right: $uni-margin-sm;
+  color: $uni-text-color-placeholder;
 }
 .search-container input {
   flex: 1;
-  padding: 24rpx 0;
-  font-size: 30rpx;
+  padding: $uni-padding-sm 0;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
 }
 .section-title {
-  padding: 30rpx 24rpx 20rpx;
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #1f2937;
+  padding: $uni-padding-base $uni-padding-sm $uni-padding-sm;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color-primary;
 }
 .goods-carousel {
   position: relative;
   height: 350rpx;
-  margin: 0 24rpx;
-  border-radius: 24rpx;
+  margin: 0 $uni-padding-sm;
+  border-radius: $uni-border-radius-xl;
   overflow: hidden;
-  box-shadow: 0 8rpx 24rpx rgba(74, 144, 226, 0.15);
+  box-shadow: $uni-shadow-base;
 }
 .carousel-item {
   position: absolute;
   width: 100%;
   height: 100%;
   opacity: 0;
-  transition: opacity 0.8s;
+  transition: opacity $uni-transition-duration-slow;
 }
 .carousel-item.active {
   opacity: 1;
@@ -267,74 +263,79 @@ export default {
 }
 .carousel-indicator {
   position: absolute;
-  bottom: 20rpx;
+  bottom: $uni-padding-sm;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 12rpx;
+  gap: $uni-spacing-sm;
 }
 .carousel-indicator view {
   width: 16rpx;
   height: 16rpx;
-  border-radius: 50%;
+  border-radius: $uni-border-radius-circle;
   background: rgba(255, 255, 255, 0.5);
+  transition: all $uni-transition-duration-base;
 }
 .carousel-indicator view.active {
-  background: #fff;
+  background: $uni-text-color-inverse;
   width: 32rpx;
-  border-radius: 8rpx;
+  border-radius: $uni-border-radius-xs;
 }
 .goods-grid {
   display: flex;
   flex-wrap: wrap;
-  padding: 0 16rpx 140rpx;
+  padding: 0 $uni-padding-xs 140rpx;
 }
 .goods-card {
   width: 48%;
   margin: 2% 1%;
-  background: #fff;
-  border-radius: 20rpx;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
   overflow: hidden;
-  box-shadow: 0 8rpx 24rpx rgba(16, 24, 40, 0.08);
+  box-shadow: $uni-shadow-card;
   position: relative;
-  transition: all 0.3s;
+  transition: all $uni-transition-duration-base;
 }
 .goods-card:active {
   transform: translateY(4rpx);
+  box-shadow: $uni-shadow-card-hover;
 }
 .card-badge {
   position: absolute;
-  top: 10rpx;
-  left: 10rpx;
-  background: #ff4757;
-  color: #fff;
-  padding: 6rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 22rpx;
-  z-index: 1;
+  top: $uni-padding-xs;
+  left: $uni-padding-xs;
+  background: $uni-color-error;
+  color: $uni-text-color-inverse;
+  padding: 6rpx $uni-padding-xs;
+  border-radius: $uni-border-radius-lg;
+  font-size: $uni-font-size-xs;
+  font-weight: $uni-font-weight-semibold;
+  z-index: $uni-z-index-base;
 }
 .goods-card image {
   width: 100%;
   height: 300rpx;
 }
 .info {
-  padding: 20rpx;
+  padding: $uni-padding-sm;
 }
 .name {
-  font-weight: 600;
-  color: #1f2937;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color-primary;
   height: 80rpx;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
+  font-size: $uni-font-size-base;
 }
 .price {
-  color: #ff6b00;
-  font-size: 36rpx;
-  font-weight: 700;
-  margin-top: 8rpx;
+  color: $uni-color-price;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-bold;
+  margin-top: $uni-spacing-xs;
 }
 .card-footer {
   display: flex;
@@ -343,31 +344,36 @@ export default {
   margin-top: 15rpx;
 }
 .sales {
-  color: #6b7280;
-  font-size: 24rpx;
+  color: $uni-text-color-secondary;
+  font-size: $uni-font-size-sm;
 }
 .goods-card button {
-  background: linear-gradient(135deg, #4a90e2 0%, #63b3ed 100%);
-  color: #fff;
-  border-radius: 40rpx;
-  font-size: 24rpx;
-  padding: 0 20rpx;
+  background: $uni-color-secondary-gradient;
+  color: $uni-text-color-inverse;
+  border-radius: $uni-border-radius-round;
+  font-size: $uni-font-size-sm;
+  padding: 0 $uni-padding-sm;
   height: 50rpx;
   line-height: 50rpx;
-  box-shadow: 0 4rpx 12rpx rgba(74, 144, 226, 0.3);
+  box-shadow: $uni-shadow-sm;
+  transition: all $uni-transition-duration-base;
+}
+.goods-card button:active {
+  transform: scale(0.95);
 }
 .empty-state {
   text-align: center;
-  padding: 200rpx 40rpx;
-  color: #aaa;
+  padding: 200rpx $uni-padding-lg;
+  color: $uni-text-color-placeholder;
 }
 .empty-icon {
   font-size: 120rpx;
-  margin-bottom: 30rpx;
+  margin-bottom: $uni-margin-base;
+  opacity: 0.5;
 }
 .empty-text {
   display: block;
-  margin-bottom: 40rpx;
-  font-size: 32rpx;
+  margin-bottom: $uni-margin-lg;
+  font-size: $uni-font-size-lg;
 }
 </style>

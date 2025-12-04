@@ -184,11 +184,11 @@ export default {
 };
 </script>
 
-<style scoped>
-.login-page {
-  padding: 60rpx 40rpx;
+<style lang="scss" scoped>
+ .login-page {
+  padding: $uni-padding-xl $uni-padding-lg;
   text-align: center;
-  background: linear-gradient(135deg, #f5f9ff 0%, #e8f4ff 100%);
+  background: linear-gradient(145deg, #fff7f0 0%, #ffe4d1 40%, #f5f7fa 100%);
   min-height: 100vh;
   position: relative;
   overflow: hidden;
@@ -204,8 +204,8 @@ export default {
 }
 .circle {
   position: absolute;
-  border-radius: 50%;
-  background: rgba(74, 144, 226, 0.1);
+  border-radius: $uni-border-radius-circle;
+  background: rgba(255, 107, 0, 0.06);
 }
 .circle1 {
   width: 200rpx;
@@ -218,7 +218,7 @@ export default {
   height: 120rpx;
   top: 40rpx;
   right: 40rpx;
-  background: rgba(255, 107, 0, 0.1);
+  background: rgba(255, 107, 0, 0.14);
 }
 
 /* Logo */
@@ -227,47 +227,47 @@ export default {
 }
 .logo-icon {
   font-size: 80rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: $uni-margin-sm;
 }
 .logo {
   font-size: 60rpx;
-  font-weight: 700;
-  color: #4a90e2;
-  margin-bottom: 20rpx;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-color-primary;
+  margin-bottom: $uni-margin-sm;
   letter-spacing: 4rpx;
 }
 .slogan {
-  font-size: 28rpx;
-  color: #7d7d7d;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-placeholder;
 }
 
 /* 卡片 */
 .card {
-  background: #fff;
-  border-radius: 24rpx;
-  padding: 60rpx 50rpx;
-  box-shadow: 0 10rpx 40rpx rgba(74, 144, 226, 0.1);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-xl;
+  padding: $uni-padding-xl $uni-padding-lg;
+  box-shadow: $uni-shadow-lg;
   position: relative;
-  z-index: 1;
+  z-index: $uni-z-index-base;
 }
 
 /* 标签页 */
 .tabs {
   display: flex;
   justify-content: center;
-  margin-bottom: 60rpx;
-  border-bottom: 2rpx solid #f0f0f0;
+  margin-bottom: $uni-margin-xl;
+  border-bottom: 2rpx solid $uni-border-color-light;
 }
 .tabs text {
-  margin: 0 40rpx;
-  font-size: 36rpx;
-  padding: 20rpx 0;
-  color: #6b7280;
+  margin: 0 $uni-margin-lg;
+  font-size: $uni-font-size-xl;
+  padding: $uni-padding-sm 0;
+  color: $uni-text-color-secondary;
   position: relative;
 }
 .tabs .active {
-  color: #4a90e2;
-  font-weight: 600;
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-semibold;
 }
 .tabs .active::after {
   content: "";
@@ -276,58 +276,62 @@ export default {
   left: 0;
   width: 100%;
   height: 6rpx;
-  background: #4a90e2;
-  border-radius: 4rpx;
+  background: $uni-color-primary;
+  border-radius: $uni-border-radius-xs;
 }
 
 /* 输入框 */
 .input-group {
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-margin-lg;
 }
 .input-item {
   display: flex;
   align-items: center;
-  background: #f8fafc;
-  border-radius: 16rpx;
-  padding: 0 30rpx;
-  margin: 30rpx 0;
-  border: 2rpx solid #eef2f7;
+  background: $uni-bg-color-grey;
+  border-radius: $uni-border-radius-base;
+  padding: 0 $uni-padding-base;
+  margin: $uni-margin-base 0;
+  border: 2rpx solid $uni-border-color-light;
+  transition: all $uni-transition-duration-base;
 }
 .input-item:focus-within {
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 4rpx rgba(74, 144, 226, 0.1);
+  border-color: $uni-color-primary;
+  box-shadow: 0 0 0 4rpx rgba(255, 107, 0, 0.1);
 }
 .input-icon {
-  font-size: 36rpx;
-  margin-right: 20rpx;
+  font-size: $uni-font-size-xl;
+  margin-right: $uni-margin-sm;
+  color: $uni-text-color-secondary;
 }
 .input-item input {
   flex: 1;
   padding: 26rpx 0;
-  font-size: 32rpx;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
 }
 
 /* 角色选择 */
 .role {
   display: flex;
   justify-content: space-around;
-  margin: 40rpx 0;
+  margin: $uni-margin-lg 0;
 }
 .role text {
   flex: 1;
   max-width: 200rpx;
-  padding: 30rpx 20rpx;
-  border: 2rpx solid #e5e7eb;
-  border-radius: 20rpx;
-  color: #374151;
+  padding: $uni-padding-base $uni-padding-sm;
+  border: 2rpx solid $uni-border-color;
+  border-radius: $uni-border-radius-lg;
+  color: $uni-text-color-primary;
   text-align: center;
+  transition: all $uni-transition-duration-base;
 }
 .role .active {
-  border-color: #4a90e2;
-  background: #f0f7ff;
-  color: #4a90e2;
+  border-color: $uni-color-primary;
+  background: rgba(255, 107, 0, 0.1);
+  color: $uni-color-primary;
   transform: translateY(-5rpx);
-  box-shadow: 0 10rpx 20rpx rgba(74, 144, 226, 0.15);
+  box-shadow: $uni-shadow-base;
 }
 .role-icon {
   font-size: 48rpx;
@@ -336,30 +340,36 @@ export default {
 
 /* 按钮 */
 .btn {
-  background: linear-gradient(135deg, #4a90e2 0%, #63b3ed 100%);
-  color: #fff;
-  margin-top: 60rpx;
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
+  margin-top: $uni-margin-xl;
   height: 96rpx;
   line-height: 96rpx;
-  border-radius: 50rpx;
-  font-size: 36rpx;
-  font-weight: 600;
-  box-shadow: 0 12rpx 30rpx rgba(74, 144, 226, 0.4);
+  border-radius: $uni-border-radius-round;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  box-shadow: $uni-shadow-button;
+  transition: all $uni-transition-duration-base;
+}
+
+.btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 .btn:disabled {
-  background: #ccc;
+  background: $uni-text-color-disabled;
   box-shadow: none;
-  opacity: 0.7;
+  opacity: $uni-opacity-disabled;
 }
 
 /* 忘记密码 */
 .forgot-password {
-  margin-top: 40rpx;
+  margin-top: $uni-margin-lg;
 }
 .forgot-password text {
-  color: #7d7d7d;
-  font-size: 28rpx;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-base;
 }
 
 /* 底部装饰 */
@@ -372,6 +382,6 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 0 40rpx;
+  padding: 0 $uni-padding-lg;
 }
 </style>

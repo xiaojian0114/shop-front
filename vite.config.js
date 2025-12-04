@@ -10,26 +10,49 @@ export default defineConfig({
 
     proxy: {
       "/auth": {
-        target: "http://localhost:8080",
+        target: "http://121.4.51.19:8080",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,
       },
       "/user": {
-        target: "http://localhost:8080",
+        target: "http://121.4.51.19:8080",
         changeOrigin: true,
         secure: false,
       },
       "/merchant": {
-        target: "http://localhost:8080",
+        target: "http://121.4.51.19:8080",
         changeOrigin: true,
         secure: false,
       },
       "/admin": {
-        target: "http://localhost:8080",
+        target: "http://121.4.51.19:8080",
         changeOrigin: true,
         secure: false,
       },
     },
+    // proxy: {
+    //   "/auth": {
+    //     target: "http://localhost:8080",
+    //     changeOrigin: true,
+    //     secure: false,
+    //     rewrite: (path) => path,
+    //   },
+    //   "/user": {
+    //     target: "http://localhost:8080",
+    //     changeOrigin: true,
+    //     secure: false,
+    //   },
+    //   "/merchant": {
+    //     target: "http://localhost:8080",
+    //     changeOrigin: true,
+    //     secure: false,
+    //   },
+    //   "/admin": {
+    //     target: "http://localhost:8080",
+    //     changeOrigin: true,
+    //     secure: false,
+    //   },
+    // },
   },
 });

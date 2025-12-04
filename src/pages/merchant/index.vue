@@ -225,72 +225,79 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
   padding-bottom: 140rpx;
   min-height: 100vh;
-  background: #f5f5f5;
+  background: $uni-bg-color-page;
 }
 
 .shop-page {
-  padding-bottom: 20rpx;
+  padding-bottom: $uni-padding-sm;
 }
 
 /* 头部店铺选择 */
 .header {
-  background: #fff;
-  padding: 30rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  background: $uni-bg-color;
+  padding: $uni-padding-base;
+  border-bottom: 1rpx solid $uni-border-color-light;
+  box-shadow: $uni-shadow-sm;
 }
 
 .shop-selector {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 30rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
-  border: 1rpx solid #e9ecef;
+  padding: $uni-padding-sm $uni-padding-base;
+  background: $uni-bg-color-grey;
+  border-radius: $uni-border-radius-sm;
+  border: 1rpx solid $uni-border-color;
+  transition: all $uni-transition-duration-base;
+}
+
+.shop-selector:active {
+  background: $uni-bg-color-hover;
 }
 
 .shop-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
 }
 
 .dropdown-icon {
-  font-size: 24rpx;
-  color: #666;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-secondary;
 }
 
 /* 商品列表 */
 .goods-list {
-  padding: 0 20rpx;
+  padding: 0 $uni-padding-sm;
   min-height: 400rpx;
 }
 
 .goods-item {
   display: flex;
   align-items: center;
-  background: #fff;
-  margin: 20rpx 0;
-  border-radius: 20rpx;
-  padding: 20rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s;
+  background: $uni-bg-color;
+  margin: $uni-margin-sm 0;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-sm;
+  box-shadow: $uni-shadow-card;
+  transition: all $uni-transition-duration-base;
 }
 
 .goods-item:active {
   transform: scale(0.98);
+  box-shadow: $uni-shadow-card-hover;
 }
 
 .goods-img {
   width: 160rpx;
   height: 160rpx;
-  margin-right: 20rpx;
-  border-radius: 12rpx;
-  background: #f8f9fa;
+  margin-right: $uni-margin-sm;
+  border-radius: $uni-border-radius-sm;
+  background: $uni-bg-color-grey;
 }
 
 .info {
@@ -299,51 +306,51 @@ export default {
 
 .name {
   display: block;
-  font-weight: bold;
-  margin-bottom: 10rpx;
-  font-size: 30rpx;
-  color: #333;
-  line-height: 1.4;
+  font-weight: $uni-font-weight-semibold;
+  margin-bottom: $uni-spacing-xs;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  line-height: $uni-line-height-base;
 }
 
 .price {
-  color: #ff6b00;
-  font-size: 32rpx;
-  font-weight: bold;
+  color: $uni-color-price;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-bold;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .stock {
-  font-size: 24rpx;
-  color: #666;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-secondary;
   display: block;
 }
 
 /* 空状态 */
 .empty-state {
   text-align: center;
-  padding: 120rpx 40rpx;
+  padding: 120rpx $uni-padding-lg;
 }
 
 .empty-icon {
   width: 200rpx;
   height: 200rpx;
-  margin-bottom: 30rpx;
+  margin-bottom: $uni-margin-base;
   opacity: 0.5;
 }
 
 .empty-text {
   display: block;
-  font-size: 32rpx;
-  color: #999;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color-placeholder;
   margin-bottom: 15rpx;
 }
 
 .empty-tip {
   display: block;
-  font-size: 26rpx;
-  color: #ccc;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-disabled;
 }
 
 /* 加载状态 */
@@ -352,22 +359,22 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 100rpx 40rpx;
+  padding: 100rpx $uni-padding-lg;
 }
 
 .loading-spinner {
   width: 60rpx;
   height: 60rpx;
-  border: 4rpx solid #f3f3f3;
-  border-top: 4rpx solid #ff6b00;
-  border-radius: 50%;
+  border: 4rpx solid $uni-bg-color-grey;
+  border-top: 4rpx solid $uni-color-primary;
+  border-radius: $uni-border-radius-circle;
   animation: spin 1s linear infinite;
-  margin-bottom: 20rpx;
+  margin-bottom: $uni-margin-sm;
 }
 
 .loading-text {
-  font-size: 28rpx;
-  color: #999;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-placeholder;
 }
 
 @keyframes spin {
@@ -382,19 +389,20 @@ export default {
 /* 添加商品浮动按钮 */
 .fab {
   position: fixed;
-  right: 40rpx;
+  right: $uni-padding-lg;
   bottom: 180rpx;
   width: 120rpx;
   height: 120rpx;
-  background: linear-gradient(135deg, #ff6b00, #ff8c00);
-  color: #fff;
-  border-radius: 50%;
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
+  border-radius: $uni-border-radius-circle;
   text-align: center;
   line-height: 120rpx;
   font-size: 60rpx;
-  box-shadow: 0 10rpx 30rpx rgba(255, 107, 0, 0.4);
-  z-index: 998;
-  transition: transform 0.3s;
+  font-weight: $uni-font-weight-bold;
+  box-shadow: $uni-shadow-button;
+  z-index: $uni-z-index-fixed;
+  transition: all $uni-transition-duration-base;
 }
 
 .fab:active {
@@ -402,7 +410,7 @@ export default {
 }
 
 .fab-icon {
-  font-weight: bold;
+  font-weight: $uni-font-weight-bold;
 }
 
 /* 商家底栏 */
@@ -412,11 +420,11 @@ export default {
   right: 0;
   bottom: 0;
   height: 120rpx;
-  background: #fff;
-  border-top: 1rpx solid #eee;
+  background: $uni-bg-color;
+  border-top: 1rpx solid $uni-border-color-light;
   display: flex;
-  z-index: 9999;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  z-index: $uni-z-index-fixed;
+  box-shadow: $uni-shadow-lg;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -426,19 +434,19 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
-  font-size: 24rpx;
-  transition: color 0.3s;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-sm;
+  transition: color $uni-transition-duration-base;
 }
 
 .tab-item .icon {
   width: 52rpx;
   height: 52rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .tab-item.active {
-  color: #ff6b35;
+  color: $uni-color-primary;
 }
 
 /* 响应式调整 */
@@ -458,7 +466,7 @@ export default {
     line-height: 100rpx;
     font-size: 50rpx;
     bottom: 160rpx;
-    right: 30rpx;
+    right: $uni-padding-base;
   }
 }
 </style>

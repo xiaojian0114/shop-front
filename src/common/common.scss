@@ -1,0 +1,492 @@
+/**
+ * 全局通用样式
+ * 电商主题统一样式类
+ */
+
+/* ==================== 通用工具类 ==================== */
+
+/* 文字颜色 */
+.text-primary {
+  color: $uni-text-color-primary;
+}
+
+.text-secondary {
+  color: $uni-text-color-secondary;
+}
+
+.text-placeholder {
+  color: $uni-text-color-placeholder;
+}
+
+.text-price {
+  color: $uni-color-price;
+  font-weight: $uni-font-weight-bold;
+}
+
+.text-price-highlight {
+  color: $uni-color-price-highlight;
+  font-weight: $uni-font-weight-bold;
+}
+
+.text-success {
+  color: $uni-color-success;
+}
+
+.text-warning {
+  color: $uni-color-warning;
+}
+
+.text-error {
+  color: $uni-color-error;
+}
+
+.text-white {
+  color: $uni-text-color-inverse;
+}
+
+/* 背景颜色 */
+.bg-white {
+  background-color: $uni-bg-color;
+}
+
+.bg-page {
+  background-color: $uni-bg-color-page;
+}
+
+.bg-grey {
+  background-color: $uni-bg-color-grey;
+}
+
+.bg-primary {
+  background-color: $uni-color-primary;
+}
+
+.bg-primary-gradient {
+  background: $uni-color-primary-gradient;
+}
+
+/* 字体大小 */
+.font-xs {
+  font-size: $uni-font-size-xs;
+}
+
+.font-sm {
+  font-size: $uni-font-size-sm;
+}
+
+.font-base {
+  font-size: $uni-font-size-base;
+}
+
+.font-lg {
+  font-size: $uni-font-size-lg;
+}
+
+.font-xl {
+  font-size: $uni-font-size-xl;
+}
+
+/* 字重 */
+.font-light {
+  font-weight: $uni-font-weight-light;
+}
+
+.font-normal {
+  font-weight: $uni-font-weight-normal;
+}
+
+.font-medium {
+  font-weight: $uni-font-weight-medium;
+}
+
+.font-semibold {
+  font-weight: $uni-font-weight-semibold;
+}
+
+.font-bold {
+  font-weight: $uni-font-weight-bold;
+}
+
+/* 间距 */
+.m-xs { margin: $uni-margin-xs; }
+.m-sm { margin: $uni-margin-sm; }
+.m-base { margin: $uni-margin-base; }
+.m-lg { margin: $uni-margin-lg; }
+.m-xl { margin: $uni-margin-xl; }
+
+.mt-xs { margin-top: $uni-margin-xs; }
+.mt-sm { margin-top: $uni-margin-sm; }
+.mt-base { margin-top: $uni-margin-base; }
+.mt-lg { margin-top: $uni-margin-lg; }
+
+.mb-xs { margin-bottom: $uni-margin-xs; }
+.mb-sm { margin-bottom: $uni-margin-sm; }
+.mb-base { margin-bottom: $uni-margin-base; }
+.mb-lg { margin-bottom: $uni-margin-lg; }
+
+.p-xs { padding: $uni-padding-xs; }
+.p-sm { padding: $uni-padding-sm; }
+.p-base { padding: $uni-padding-base; }
+.p-lg { padding: $uni-padding-lg; }
+.p-xl { padding: $uni-padding-xl; }
+
+/* 圆角 */
+.rounded-xs { border-radius: $uni-border-radius-xs; }
+.rounded-sm { border-radius: $uni-border-radius-sm; }
+.rounded-base { border-radius: $uni-border-radius-base; }
+.rounded-lg { border-radius: $uni-border-radius-lg; }
+.rounded-xl { border-radius: $uni-border-radius-xl; }
+.rounded-round { border-radius: $uni-border-radius-round; }
+.rounded-circle { border-radius: $uni-border-radius-circle; }
+
+/* 阴影 */
+.shadow-sm {
+  box-shadow: $uni-shadow-sm;
+}
+
+.shadow-base {
+  box-shadow: $uni-shadow-base;
+}
+
+.shadow-lg {
+  box-shadow: $uni-shadow-lg;
+}
+
+.shadow-card {
+  box-shadow: $uni-shadow-card;
+}
+
+/* ==================== 通用组件样式 ==================== */
+
+/* 卡片 */
+.card {
+  background: $uni-bg-color-card;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  box-shadow: $uni-shadow-card;
+  transition: all $uni-transition-duration-base $uni-transition-timing-function;
+}
+
+.card:hover {
+  box-shadow: $uni-shadow-card-hover;
+  transform: translateY(-4rpx);
+}
+
+/* 按钮基础样式 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 $uni-padding-base;
+  height: 80rpx;
+  line-height: 80rpx;
+  border-radius: $uni-border-radius-round;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-medium;
+  border: none;
+  transition: all $uni-transition-duration-base $uni-transition-timing-function;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
+  box-shadow: $uni-shadow-button;
+}
+
+.btn-primary:active {
+  background: $uni-color-primary-dark;
+  box-shadow: $uni-shadow-button-hover;
+  transform: translateY(2rpx);
+}
+
+.btn-secondary {
+  background: $uni-color-secondary-gradient;
+  color: $uni-text-color-inverse;
+  box-shadow: 0 8rpx 20rpx rgba(74, 144, 226, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2rpx solid $uni-color-primary;
+  color: $uni-color-primary;
+}
+
+.btn-outline:active {
+  background: rgba(255, 107, 0, 0.1);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: $uni-text-color-secondary;
+}
+
+.btn-ghost:active {
+  background: $uni-bg-color-hover;
+}
+
+.btn:disabled {
+  opacity: $uni-opacity-disabled;
+  cursor: not-allowed;
+}
+
+/* 输入框基础样式 */
+.input {
+  width: 100%;
+  padding: $uni-padding-sm;
+  border: 2rpx solid $uni-border-color;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  background: $uni-bg-color;
+  transition: all $uni-transition-duration-base $uni-transition-timing-function;
+}
+
+.input:focus {
+  border-color: $uni-color-primary;
+  box-shadow: 0 0 0 4rpx rgba(255, 107, 0, 0.1);
+  outline: none;
+}
+
+.input::placeholder {
+  color: $uni-text-color-placeholder;
+}
+
+/* 标签页 */
+.tabs {
+  display: flex;
+  background: $uni-bg-color;
+  border-bottom: 2rpx solid $uni-border-color-light;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: $uni-padding-sm 0;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
+  position: relative;
+  transition: color $uni-transition-duration-base;
+}
+
+.tab.active {
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-semibold;
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 4rpx;
+  background: $uni-color-primary;
+  border-radius: 2rpx;
+}
+
+/* 分割线 */
+.divider {
+  height: 1rpx;
+  background: $uni-border-color-light;
+  margin: $uni-margin-base 0;
+}
+
+/* 空状态 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $uni-padding-xl * 2;
+  color: $uni-text-color-placeholder;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: $uni-margin-base;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-placeholder;
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $uni-padding-xl;
+  color: $uni-text-color-placeholder;
+}
+
+/* 价格显示 */
+.price {
+  color: $uni-color-price;
+  font-weight: $uni-font-weight-bold;
+  font-size: $uni-font-size-xl;
+}
+
+.price-small {
+  font-size: $uni-font-size-lg;
+}
+
+.price-large {
+  font-size: 48rpx;
+}
+
+.price-old {
+  color: $uni-text-color-placeholder;
+  text-decoration: line-through;
+  font-size: $uni-font-size-sm;
+  font-weight: $uni-font-weight-normal;
+  margin-left: $uni-spacing-sm;
+}
+
+/* 标签 */
+.tag {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  border-radius: $uni-border-radius-xs;
+  font-size: $uni-font-size-xs;
+  font-weight: $uni-font-weight-medium;
+}
+
+.tag-primary {
+  background: rgba(255, 107, 0, 0.1);
+  color: $uni-color-primary;
+}
+
+.tag-success {
+  background: rgba(7, 193, 96, 0.1);
+  color: $uni-color-success;
+}
+
+.tag-warning {
+  background: rgba(255, 153, 0, 0.1);
+  color: $uni-color-warning;
+}
+
+.tag-error {
+  background: rgba(255, 68, 68, 0.1);
+  color: $uni-color-error;
+}
+
+/* 徽章 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: $uni-border-radius-round;
+  background: $uni-color-error;
+  color: $uni-text-color-inverse;
+  font-size: $uni-font-size-xs;
+  font-weight: $uni-font-weight-bold;
+}
+
+/* 弹性布局 */
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.flex-center {
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  justify-content: space-between;
+}
+
+.flex-around {
+  justify-content: space-around;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* 文本处理 */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.text-ellipsis-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+/* 定位 */
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+/* 显示隐藏 */
+.hidden {
+  display: none;
+}
+
+.visible {
+  visibility: visible;
+}
+
+.invisible {
+  visibility: hidden;
+}
+
+/* 过渡动画 */
+.transition {
+  transition: all $uni-transition-duration-base $uni-transition-timing-function;
+}
+
+.transition-fast {
+  transition: all $uni-transition-duration-fast $uni-transition-timing-function;
+}
+
+.transition-slow {
+  transition: all $uni-transition-duration-slow $uni-transition-timing-function;
+}
+

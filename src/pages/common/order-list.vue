@@ -57,7 +57,17 @@
           </button>
 
           <text v-if="o.status === 2" class="status-tip">等待商家发货</text>
-          <text v-if="o.status === 3" class="status-tip success">已发货</text>
+          <view v-if="o.status === 3" class="receive-action">
+            <text class="status-tip success">已发货</text>
+            <button
+              class="receive-btn"
+              @tap="confirmReceipt(o)"
+              :loading="confirmingOrderId === o.orderId"
+              :disabled="confirmingOrderId === o.orderId"
+            >
+              {{ confirmingOrderId === o.orderId ? "提交中..." : "确认收货" }}
+            </button>
+          </view>
           <text v-if="o.status === 4" class="status-tip success">交易完成</text>
         </view>
       </view>
@@ -81,12 +91,16 @@
 </template>
 
 <script>
+import userApi from "@/api/user.js";
+import orderApi from "@/api/order.js";
+
 export default {
   data() {
     return {
       orderList: [],
       loading: true,
       payingOrderNo: "",
+      confirmingOrderId: 0,
 
       tabs: [
         { label: "全部", value: 0 },
@@ -122,50 +136,40 @@ export default {
     loadOrders(callback) {
       this.loading = true;
 
-      uni.request({
-        url: "http://localhost:8080/user/order/list", // 保持后端路径不变
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        data: {
-          status: this.currentStatus, // ← 确保把状态传给后端
+      userApi
+        .getOrderList({
+          status: this.currentStatus,
           page: 1,
           pageSize: 50,
-        },
-        success: (res) => {
-          if (res.data && res.data.code === 200) {
-            const list = res.data.data?.list || [];
+        })
+        .then((res) => {
+          const list = res?.list || res || [];
 
-            // 兼容后端返回格式：补全字段并映射 statusText 如果后端没有返回
-            this.orderList = list.map((o) => ({
-              ...o,
-              goods: o.goods || [],
-              goodsCount: o.goodsCount || (o.goods ? o.goods.length : 0),
-              statusText:
-                o.statusText ||
-                {
-                  1: "待支付",
-                  2: "待发货",
-                  3: "已发货",
-                  4: "已完成",
-                }[o.status] ||
-                "未知状态",
-            }));
-          } else {
-            this.orderList = [];
-            uni.showToast({
-              title: (res.data && res.data.msg) || "加载失败",
-              icon: "none",
-            });
-          }
-        },
-        fail: () => {
+          // 兼容后端返回格式：补全字段并映射 statusText 如果后端没有返回
+          this.orderList = list.map((o) => ({
+            ...o,
+            orderId: o.orderId || o.id,
+            goods: o.goods || [],
+            goodsCount: o.goodsCount || (o.goods ? o.goods.length : 0),
+            statusText:
+              o.statusText ||
+              {
+                1: "待支付",
+                2: "待发货",
+                3: "已发货",
+                4: "已完成",
+              }[o.status] ||
+              "未知状态",
+          }));
+        })
+        .catch((err) => {
           this.orderList = [];
-          uni.showToast({ title: "网络错误", icon: "none" });
-        },
-        complete: () => {
+          console.error("加载订单失败:", err);
+        })
+        .finally(() => {
           this.loading = false;
           callback?.();
-        },
-      });
+        });
     },
 
     /** 支付订单（保持你原来的逻辑） */
@@ -179,25 +183,18 @@ export default {
           if (!e.confirm) return;
           this.payingOrderNo = orderNo;
 
-          uni.request({
-            url: "http://localhost:8080/user/order/pay",
-            method: "POST",
-            header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-            data: { orderNo },
-            success: (res) => {
-              if (res.data && res.data.code === 200) {
-                uni.showToast({ title: "支付成功！", icon: "success" });
-                this.loadOrders();
-              } else {
-                uni.showToast({
-                  title: (res.data && res.data.msg) || "支付失败",
-                  icon: "none",
-                });
-              }
-            },
-            fail: () => uni.showToast({ title: "网络异常", icon: "none" }),
-            complete: () => (this.payingOrderNo = ""),
-          });
+          orderApi
+            .payOrder({ orderNo })
+            .then(() => {
+              uni.showToast({ title: "支付成功！", icon: "success" });
+              this.loadOrders();
+            })
+            .catch((err) => {
+              console.error("支付失败:", err);
+            })
+            .finally(() => {
+              this.payingOrderNo = "";
+            });
         },
       });
     },
@@ -212,74 +209,108 @@ export default {
         }[s] || ""
       );
     },
+
+    /** 确认收货 */
+    confirmReceipt(order) {
+      uni.showModal({
+        title: "确认收货",
+        content: `确认已收到订单 ${order.orderNo} 的商品吗？`,
+        confirmText: "确认",
+        confirmColor: "#07c160",
+        success: (res) => {
+          if (!res.confirm) return;
+          const orderId = order.orderId || order.id;
+          this.confirmingOrderId = orderId;
+
+          orderApi
+            .confirmReceipt(orderId)
+            .then(() => {
+              uni.showToast({ title: "确认收货成功", icon: "success" });
+              this.loadOrders();
+            })
+            .catch((err) => {
+              console.error("确认收货失败:", err);
+              uni.showToast({ title: "操作失败，请稍后重试", icon: "none" });
+            })
+            .finally(() => {
+              this.confirmingOrderId = 0;
+            });
+        },
+      });
+    },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* 顶部 tabs */
 .tabs {
   display: flex;
-  background: #fff;
-  padding: 20rpx 0;
-  margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  background: $uni-bg-color;
+  padding: $uni-padding-sm 0;
+  margin-bottom: $uni-margin-sm;
+  box-shadow: $uni-shadow-sm;
 }
 .tab {
   flex: 1;
   text-align: center;
-  font-size: 30rpx;
-  color: #666;
-  padding: 12rpx 0;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
+  padding: $uni-padding-xs 0;
+  transition: color $uni-transition-duration-base;
 }
 .tab.active {
-  color: #ff6b00;
-  font-weight: bold;
-  border-bottom: 4rpx solid #ff6b00;
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-semibold;
+  border-bottom: 4rpx solid $uni-color-primary;
 }
 
-/* ===== 订单原样式（不改动） ===== */
+/* 订单列表 */
 .order-list {
-  background: #f8f8f8;
+  background: $uni-bg-color-page;
   min-height: 100vh;
-  padding: 20rpx 0;
+  padding: $uni-padding-sm 0;
 }
 .order {
-  margin: 0 30rpx 30rpx;
-  background: #fff;
-  border-radius: 28rpx;
+  margin: 0 $uni-margin-base $uni-margin-base;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-xxl;
   overflow: hidden;
-  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.08);
+  box-shadow: $uni-shadow-card;
+  transition: all $uni-transition-duration-base;
+}
+.order:active {
+  box-shadow: $uni-shadow-card-hover;
 }
 .header {
-  padding: 30rpx;
-  background: linear-gradient(120deg, #fdfbfb, #f5f5f5);
+  padding: $uni-padding-base;
+  background: linear-gradient(120deg, #fdfbfb, $uni-bg-color-grey);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 28rpx;
-  color: #666;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
 }
 .status-pay {
-  color: #ff6b00;
+  color: $uni-color-primary;
 }
 .status-ship {
-  color: #409eff;
+  color: $uni-color-secondary;
 }
 .status-receive {
-  color: #67c23a;
+  color: $uni-color-success;
 }
 .status-done {
-  color: #999;
+  color: $uni-text-color-placeholder;
 }
 .goods-list {
-  padding: 0 30rpx;
+  padding: 0 $uni-padding-base;
 }
 .goods-item {
   display: flex;
   align-items: center;
-  padding: 30rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: $uni-padding-base 0;
+  border-bottom: 1rpx solid $uni-border-color-light;
 }
 .goods-item:last-child {
   border-bottom: none;
@@ -287,72 +318,98 @@ export default {
 .thumb {
   width: 180rpx;
   height: 180rpx;
-  border-radius: 20rpx;
-  margin-right: 28rpx;
-  background: #f9f9f9;
+  border-radius: $uni-border-radius-lg;
+  margin-right: $uni-margin-base;
+  background: $uni-bg-color-grey;
 }
 .info {
   flex: 1;
 }
 .name {
-  font-size: 32rpx;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 12rpx;
+  margin-bottom: $uni-spacing-sm;
 }
 .spec {
-  color: #999;
-  font-size: 28rpx;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-base;
 }
 .footer {
-  padding: 30rpx;
+  padding: $uni-padding-base;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fafafa;
-  border-top: 1rpx solid #eee;
+  background: $uni-bg-color-grey;
+  border-top: 1rpx solid $uni-border-color-light;
 }
 .total-text {
-  font-size: 30rpx;
-  color: #666;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
 }
 .price {
-  color: #ff4444;
+  color: $uni-color-price-highlight;
   font-size: 38rpx;
-  font-weight: bold;
+  font-weight: $uni-font-weight-bold;
 }
 .pay-btn {
-  background: linear-gradient(90deg, #ff6b00, #ff8c3d);
-  color: #fff;
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
   height: 76rpx;
   line-height: 76rpx;
-  border-radius: 38rpx;
-  font-size: 30rpx;
-  padding: 0 40rpx;
-  box-shadow: 0 8rpx 20rpx rgba(255, 107, 0, 0.4);
+  border-radius: $uni-border-radius-round;
+  font-size: $uni-font-size-base;
+  padding: 0 $uni-padding-lg;
+  box-shadow: $uni-shadow-button;
   min-width: 180rpx;
+  transition: all $uni-transition-duration-base;
+}
+.pay-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 .status-tip {
-  font-size: 28rpx;
-  padding: 10rpx 20rpx;
-  border-radius: 30rpx;
-  background: #f0f0f0;
+  font-size: $uni-font-size-base;
+  padding: $uni-padding-xs $uni-padding-sm;
+  border-radius: $uni-border-radius-round;
+  background: $uni-bg-color-grey;
+}
+.receive-action {
+  display: flex;
+  align-items: center;
+  gap: $uni-spacing-sm;
+}
+.receive-btn {
+  min-width: 180rpx;
+  height: 76rpx;
+  line-height: 76rpx;
+  border-radius: $uni-border-radius-round;
+  background: rgba(7, 193, 96, 0.12);
+  color: $uni-color-success;
+  font-size: $uni-font-size-base;
+  padding: 0 $uni-padding-lg;
+  border: 2rpx solid rgba(7, 193, 96, 0.4);
+  transition: all $uni-transition-duration-base;
+}
+.receive-btn:active {
+  background: rgba(7, 193, 96, 0.24);
 }
 .status-tip.success {
-  background: #f0fdf4;
-  color: #67c23a;
+  background: rgba(7, 193, 96, 0.1);
+  color: $uni-color-success;
 }
 .empty {
   text-align: center;
   padding-top: 300rpx;
-  color: #999;
+  color: $uni-text-color-placeholder;
 }
 .loading {
   text-align: center;
   padding: 100rpx 0;
-  color: #999;
+  color: $uni-text-color-placeholder;
 }
 </style>

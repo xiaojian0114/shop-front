@@ -53,8 +53,9 @@
     </view>
 
     <!-- 编辑弹窗 -->
-    <view class="modal" v-if="showEdit" @tap="showEdit = false">
-      <view class="modal-content" @tap.stop>
+    <view class="modal" v-if="showEdit">
+      <view class="modal-mask" @tap="showEdit = false"></view>
+      <view class="modal-content">
         <text class="modal-title">编辑店铺</text>
         <view class="form-item">
           <text class="label">店铺名称</text>
@@ -112,6 +113,8 @@
 </template>
 
 <script>
+import merchantApi from "@/api/merchant.js";
+
 export default {
   data() {
     return {
@@ -144,16 +147,13 @@ export default {
     goTo(path) {
       uni.reLaunch({ url: path });
     },
-    loadShops() {
-      uni.request({
-        url: "http://localhost:8080/merchant/shops",
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        success: (res) => {
-          if (res.data.code === 200) {
-            this.shops = res.data.data || [];
-          }
-        },
-      });
+    async loadShops() {
+      try {
+        const shops = await merchantApi.getMyShops();
+        this.shops = shops || [];
+      } catch (error) {
+        console.error("加载店铺列表失败:", error);
+      }
     },
     applyShop() {
       uni.navigateTo({ url: "/pages/merchant/apply-shop" });
@@ -179,61 +179,24 @@ export default {
     viewShop(shop) {
       uni.navigateTo({ url: `/pages/merchant/shop-detail?id=${shop.id}` });
     },
-    chooseLogo() {
+    async chooseLogo() {
       uni.chooseImage({
         count: 1,
-        success: (res) => {
-          uni.showLoading({
-            title: "上传中...",
-          });
-
-          uni.uploadFile({
-            url: "http://localhost:8080/merchant/upload",
-            filePath: res.tempFilePaths[0],
-            name: "file",
-            header: {
-              Authorization: "Bearer " + uni.getStorageSync("token"),
-            },
-            success: (r) => {
-              uni.hideLoading();
-              console.log("上传返回:", r);
-
-              try {
-                const data =
-                  typeof r.data === "string" ? JSON.parse(r.data) : r.data;
-                if (data.code === 200) {
-                  this.editForm.logo = data.data;
-                  uni.showToast({
-                    title: "上传成功",
-                    icon: "success",
-                  });
-                } else {
-                  uni.showToast({
-                    title: data.msg || "上传失败",
-                    icon: "none",
-                  });
-                }
-              } catch (e) {
-                console.error("解析上传结果失败:", e);
-                uni.showToast({
-                  title: "上传失败",
-                  icon: "none",
-                });
-              }
-            },
-            fail: (err) => {
-              uni.hideLoading();
-              console.error("上传失败:", err);
-              uni.showToast({
-                title: "上传失败",
-                icon: "none",
-              });
-            },
-          });
+        success: async (res) => {
+          try {
+            const url = await merchantApi.uploadImage(res.tempFilePaths[0]);
+            this.editForm.logo = url;
+            uni.showToast({
+              title: "上传成功",
+              icon: "success",
+            });
+          } catch (err) {
+            console.error("上传失败:", err);
+          }
         },
       });
     },
-    submitEdit() {
+    async submitEdit() {
       if (!this.editForm.name.trim()) {
         return uni.showToast({
           title: "请输入店铺名",
@@ -243,108 +206,93 @@ export default {
 
       console.log("提交编辑:", this.editForm);
 
-      uni.request({
-        url: "http://localhost:8080/merchant/shop/update",
-        method: "POST",
-        header: {
-          Authorization: "Bearer " + uni.getStorageSync("token"),
-          "Content-Type": "application/json",
-        },
-        data: {
+      try {
+        await merchantApi.updateShop({
           id: this.editForm.id,
           name: this.editForm.name,
           logo: this.editForm.logo,
-        },
-        success: (res) => {
-          console.log("编辑返回:", res);
-          if (res.data.code === 200) {
-            uni.showToast({
-              title: "修改成功",
-              icon: "success",
-            });
-            this.showEdit = false;
-            this.loadShops();
-          } else {
-            uni.showToast({
-              title: res.data.msg || "修改失败",
-              icon: "none",
-            });
-          }
-        },
-        fail: (err) => {
-          console.error("编辑失败:", err);
-          uni.showToast({
-            title: "修改失败",
-            icon: "none",
-          });
-        },
-      });
+        });
+        uni.showToast({
+          title: "修改成功",
+          icon: "success",
+        });
+        this.showEdit = false;
+        this.loadShops();
+      } catch (err) {
+        console.error("编辑失败:", err);
+      }
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* 页面基础布局 */
 .container {
-  padding: 30rpx;
+  padding: $uni-padding-base;
   padding-bottom: 140rpx;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: $uni-bg-color-page;
 }
 
 /* 申请新店铺区域 */
 .apply-section {
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-padding-lg;
   text-align: center;
 }
 
 .apply-btn {
-  background: linear-gradient(135deg, #ff8d4d, #ff6b35);
-  color: #fff;
-  padding: 24rpx 50rpx;
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
+  padding: $uni-padding-sm 50rpx;
   border-radius: 50rpx;
-  font-size: 32rpx;
-  font-weight: 500;
-  box-shadow: 0 6rpx 20rpx rgba(255, 107, 53, 0.3);
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-medium;
+  box-shadow: $uni-shadow-button;
   width: 100%;
   max-width: 400rpx;
+  transition: all $uni-transition-duration-base;
+}
+
+.apply-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 /* 店铺列表区域 */
 .shop-list {
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-padding-lg;
 }
 
 .section-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 30rpx;
-  padding-left: 10rpx;
-  border-left: 8rpx solid #ff6b35;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
+  margin-bottom: $uni-margin-base;
+  padding-left: $uni-spacing-xs;
+  border-left: 8rpx solid $uni-color-primary;
 }
 
 .shop-cards {
   display: flex;
   flex-direction: column;
-  gap: 30rpx;
+  gap: $uni-margin-base;
 }
 
 .shop-card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  box-shadow: $uni-shadow-sm;
   display: flex;
   flex-direction: column;
   gap: 25rpx;
-  transition: all 0.3s ease;
+  transition: all $uni-transition-duration-base;
 }
 
 .shop-card:active {
   transform: translateY(4rpx);
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  box-shadow: $uni-shadow-card-hover;
 }
 
 .card-header {
@@ -356,7 +304,7 @@ export default {
 .logo {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 16rpx;
+  border-radius: $uni-border-radius-base;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -368,47 +316,53 @@ export default {
 }
 
 .name {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10rpx;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .status {
-  font-size: 26rpx;
-  padding: 6rpx 16rpx;
-  border-radius: 20rpx;
+  font-size: $uni-font-size-sm;
+  padding: 6rpx $uni-padding-sm;
+  border-radius: $uni-border-radius-lg;
   align-self: flex-start;
 }
 
 .status.success {
   background: rgba(7, 193, 96, 0.1);
-  color: #07c160;
+  color: $uni-color-success;
 }
 
 .status.pending {
   background: rgba(255, 153, 0, 0.1);
-  color: #ff9900;
+  color: $uni-color-warning;
 }
 
 .card-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 20rpx;
+  gap: $uni-margin-sm;
 }
 
 .action-btn {
-  padding: 14rpx 30rpx;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  font-weight: 500;
+  padding: 14rpx $uni-padding-base;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-sm;
+  font-weight: $uni-font-weight-medium;
   min-width: 120rpx;
+  transition: all $uni-transition-duration-base;
 }
 
 .action-btn.secondary {
-  background: #f1f1f1;
-  color: #666;
-  border: 1rpx solid #e5e5e5;
+  background: $uni-bg-color-grey;
+  color: $uni-text-color-secondary;
+  border: 1rpx solid $uni-border-color-light;
+}
+
+.action-btn:active {
+  transform: translateY(2rpx);
+  opacity: 0.9;
 }
 
 /* 空状态 */
@@ -417,20 +371,20 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120rpx 40rpx;
+  padding: 120rpx $uni-padding-lg;
   text-align: center;
 }
 
 .empty-img {
   width: 240rpx;
   height: 240rpx;
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-padding-lg;
   opacity: 0.7;
 }
 
 .empty-text {
-  font-size: 32rpx;
-  color: #999;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color-placeholder;
   line-height: 1.5;
 }
 
@@ -438,78 +392,87 @@ export default {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: $uni-z-index-modal;
   animation: fadeIn 0.25s ease-out;
-  padding: 40rpx;
+  padding: $uni-padding-lg;
+}
+
+.modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
 .modal-content {
+  position: relative;
+  z-index: 2;
   width: 100%;
   max-width: 600rpx;
-  background: #fff;
-  border-radius: 24rpx;
-  padding: 50rpx 40rpx;
-  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.15);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-xl;
+  padding: 50rpx $uni-padding-lg;
+  box-shadow: $uni-shadow-lg;
   animation: slideUp 0.3s ease-out;
 }
 
 .modal-title {
   text-align: center;
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 40rpx;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
+  margin-bottom: $uni-padding-lg;
 }
 
 /* 表单项 */
 .form-item {
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-padding-lg;
 }
 
 .label {
-  font-size: 30rpx;
-  color: #333;
-  margin-bottom: 18rpx;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  margin-bottom: $uni-margin-xs;
   display: block;
-  font-weight: 500;
+  font-weight: $uni-font-weight-medium;
 }
 
 .form-input {
   width: 100%;
-  border: 2rpx solid #e5e5e5;
-  background: #fafafa;
-  padding: 24rpx 28rpx;
-  border-radius: 16rpx;
-  font-size: 30rpx;
-  color: #333;
+  border: 2rpx solid $uni-border-color-light;
+  background: $uni-bg-color-grey;
+  padding: $uni-padding-sm $uni-padding-base;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
   box-sizing: border-box;
-  transition: border-color 0.3s;
+  transition: all $uni-transition-duration-base;
 }
 
 .form-input:focus {
-  border-color: #ff6b35;
+  border-color: $uni-color-primary;
+  box-shadow: 0 0 0 4rpx rgba(255, 107, 0, 0.1);
 }
 
 /* 头像预览区域 */
 .logo-preview {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 20rpx;
-  background: #f2f2f2;
+  border-radius: $uni-border-radius-lg;
+  background: $uni-bg-color-grey;
   overflow: hidden;
   position: relative;
-  margin-top: 10rpx;
-  border: 2rpx dashed #e5e5e5;
-  cursor: pointer;
-  transition: all 0.3s;
+  margin-top: $uni-spacing-xs;
+  border: 2rpx dashed $uni-border-color;
+  transition: all $uni-transition-duration-base;
 }
 
 .logo-preview:active {
   transform: scale(0.98);
+  border-color: $uni-color-primary;
 }
 
 .preview-img {
@@ -523,38 +486,44 @@ export default {
   bottom: 0;
   width: 100%;
   background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  color: $uni-text-color-inverse;
   text-align: center;
-  font-size: 24rpx;
-  padding: 10rpx 0;
+  font-size: $uni-font-size-sm;
+  padding: $uni-padding-xs 0;
 }
 
 /* 按钮组 */
 .modal-actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 20rpx;
-  gap: 20rpx;
+  margin-top: $uni-margin-sm;
+  gap: $uni-margin-sm;
 }
 
 .cancel-btn,
 .confirm-btn {
   flex: 1;
   height: 80rpx;
-  border-radius: 16rpx;
-  font-size: 30rpx;
-  font-weight: 500;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-medium;
+  transition: all $uni-transition-duration-base;
 }
 
 .cancel-btn {
-  background: #f1f1f1;
-  color: #666;
+  background: $uni-bg-color-grey;
+  color: $uni-text-color-secondary;
 }
 
 .confirm-btn {
-  background: #ff6b35;
-  color: #fff;
-  box-shadow: 0 6rpx 20rpx rgba(255, 107, 53, 0.3);
+  background: $uni-color-primary;
+  color: $uni-text-color-inverse;
+  box-shadow: $uni-shadow-button;
+}
+
+.confirm-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 /* 弹窗动画 */
@@ -585,12 +554,12 @@ export default {
   left: 0;
   right: 0;
   height: 120rpx;
-  background: #fff;
+  background: $uni-bg-color;
   display: flex;
   justify-content: space-around;
-  border-top: 1rpx solid #eaeaea;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
-  z-index: 999;
+  border-top: 1rpx solid $uni-border-color-light;
+  box-shadow: $uni-shadow-lg;
+  z-index: $uni-z-index-fixed;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -600,25 +569,25 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
-  font-size: 24rpx;
-  transition: color 0.3s;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-sm;
+  transition: color $uni-transition-duration-base;
 }
 
 .tab-item .icon {
   width: 44rpx;
   height: 44rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .tab-item.active {
-  color: #ff6b35;
+  color: $uni-color-primary;
 }
 
 /* 响应式调整 */
 @media (max-width: 750rpx) {
   .container {
-    padding: 20rpx;
+    padding: $uni-margin-sm;
     padding-bottom: 140rpx;
   }
 
@@ -627,7 +596,7 @@ export default {
   }
 
   .modal {
-    padding: 20rpx;
+    padding: $uni-margin-sm;
   }
 }
 </style>

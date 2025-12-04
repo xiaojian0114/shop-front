@@ -12,9 +12,11 @@ import InputEntry from '@/components/InputEntry.vue'
   </view>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .root-container {
   padding: 5rem 2.5rem;
   text-align: center;
+  background: $uni-bg-color-page;
+  min-height: 100vh;
 }
 </style>

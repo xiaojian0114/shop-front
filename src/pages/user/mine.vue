@@ -250,17 +250,17 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .mine {
-  background: #f5f7fa;
+  background: $uni-bg-color-page;
   min-height: 100vh;
-  padding-bottom: 40rpx;
+  padding-bottom: $uni-padding-lg;
 }
 
 /* 顶部区域 */
 .header {
   height: 380rpx;
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  background: $uni-color-primary-gradient;
   position: relative;
   overflow: hidden;
 }
@@ -271,29 +271,29 @@ export default {
   right: -150rpx;
   width: 400rpx;
   height: 400rpx;
-  border-radius: 50%;
+  border-radius: $uni-border-radius-circle;
   background: rgba(255, 255, 255, 0.1);
 }
 
 .user-card {
   display: flex;
   align-items: center;
-  padding: 100rpx 40rpx 0;
+  padding: 100rpx $uni-padding-lg 0;
   position: relative;
-  z-index: 2;
+  z-index: $uni-z-index-base;
 }
 
 .avatar-wrapper {
   position: relative;
-  margin-right: 30rpx;
+  margin-right: $uni-margin-base;
 }
 
 .avatar {
   width: 140rpx;
   height: 140rpx;
-  border-radius: 50%;
+  border-radius: $uni-border-radius-circle;
   border: 4rpx solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.2);
+  box-shadow: $uni-shadow-lg;
 }
 
 .avatar-edit {
@@ -302,17 +302,17 @@ export default {
   right: 0;
   width: 44rpx;
   height: 44rpx;
-  background: #ff6b6b;
-  border-radius: 50%;
+  background: $uni-color-error;
+  border-radius: $uni-border-radius-circle;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2rpx solid #fff;
+  border: 2rpx solid $uni-text-color-inverse;
 }
 
 .avatar-edit .icon {
   font-size: 20rpx;
-  color: #fff;
+  color: $uni-text-color-inverse;
 }
 
 .info {
@@ -321,47 +321,47 @@ export default {
 }
 
 .nickname {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #fff;
-  margin-bottom: 10rpx;
+  font-size: $uni-font-size-h2;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color-inverse;
+  margin-bottom: $uni-spacing-xs;
   text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
 }
 
 .phone {
-  font-size: 28rpx;
+  font-size: $uni-font-size-base;
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* 订单统计 */
 .order-box {
-  background: #fff;
-  margin: -60rpx 30rpx 30rpx;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.08);
+  background: $uni-bg-color-card;
+  margin: -60rpx $uni-margin-base $uni-margin-base;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  box-shadow: $uni-shadow-card;
   position: relative;
-  z-index: 1;
+  z-index: $uni-z-index-base;
 }
 
 .box-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30rpx;
-  padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  margin-bottom: $uni-margin-base;
+  padding-bottom: $uni-padding-sm;
+  border-bottom: 1rpx solid $uni-border-color-light;
 }
 
 .title {
   font-size: 34rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
 }
 
 .more {
-  font-size: 26rpx;
-  color: #999;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
 }
 
 .order-stats {
@@ -380,17 +380,17 @@ export default {
   position: relative;
   width: 80rpx;
   height: 80rpx;
-  border-radius: 20rpx;
-  background: #f8f9fa;
+  border-radius: $uni-border-radius-lg;
+  background: $uni-bg-color-grey;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 15rpx;
-  transition: all 0.3s;
+  transition: all $uni-transition-duration-base;
 }
 
 .icon-box.active {
-  background: #e3f2fd;
+  background: rgba(74, 144, 226, 0.1);
 }
 
 .icon {
@@ -401,48 +401,49 @@ export default {
   position: absolute;
   top: -10rpx;
   right: -10rpx;
-  background: #ff4757;
-  color: #fff;
-  font-size: 20rpx;
+  background: $uni-color-error;
+  color: $uni-text-color-inverse;
+  font-size: $uni-font-size-xs;
   min-width: 32rpx;
   height: 32rpx;
-  border-radius: 16rpx;
+  border-radius: $uni-border-radius-base;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 8rpx;
+  padding: 0 $uni-spacing-xs;
+  font-weight: $uni-font-weight-bold;
 }
 
 .txt {
-  font-size: 26rpx;
-  color: #666;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-secondary;
 }
 
 /* 菜单列表 */
 .menu-list {
-  padding: 0 30rpx;
+  padding: 0 $uni-padding-base;
 }
 
 .menu-group {
-  background: #fff;
-  border-radius: 20rpx;
-  margin-bottom: 30rpx;
+  background: $uni-bg-color-card;
+  border-radius: $uni-border-radius-lg;
+  margin-bottom: $uni-margin-base;
   overflow: hidden;
-  box-shadow: 0 5rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: $uni-shadow-card;
 }
 
 .menu-item {
   height: 100rpx;
-  padding: 0 30rpx;
+  padding: 0 $uni-padding-base;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1rpx solid #f5f5f5;
-  transition: background 0.2s;
+  border-bottom: 1rpx solid $uni-border-color-light;
+  transition: background $uni-transition-duration-fast;
 }
 
 .menu-item:active {
-  background: #f8f9fa;
+  background: $uni-bg-color-hover;
 }
 
 .menu-item:last-child {
@@ -457,57 +458,57 @@ export default {
 .item-icon {
   width: 48rpx;
   height: 48rpx;
-  border-radius: 12rpx;
+  border-radius: $uni-border-radius-sm;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20rpx;
-  font-size: 28rpx;
+  margin-right: $uni-margin-sm;
+  font-size: $uni-font-size-base;
 }
 
 .item-icon.order {
-  background: #e3f2fd;
+  background: rgba(33, 150, 243, 0.1);
   color: #2196f3;
 }
 
 .item-icon.cart {
-  background: #fff3e0;
-  color: #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+  color: $uni-color-warning;
 }
 
 .item-icon.address {
-  background: #e8f5e9;
-  color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+  color: $uni-color-success;
 }
 
 .item-icon.favorite {
-  background: #fce4ec;
+  background: rgba(233, 30, 99, 0.1);
   color: #e91e63;
 }
 
 .item-icon.service {
-  background: #f3e5f5;
+  background: rgba(156, 39, 176, 0.1);
   color: #9c27b0;
 }
 
 .item-icon.logout {
-  background: #ffebee;
-  color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+  color: $uni-color-error;
 }
 
 .label {
-  font-size: 32rpx;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
 }
 
 .logout .label {
-  color: #f44336;
-  font-weight: 500;
+  color: $uni-color-error;
+  font-weight: $uni-font-weight-medium;
 }
 
 .arrow {
-  font-size: 36rpx;
-  color: #ccc;
+  font-size: $uni-font-size-xl;
+  color: $uni-border-color;
 }
 
 .logout-group {
@@ -525,15 +526,15 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: $uni-z-index-modal;
 }
 
 .loading-spinner {
   width: 80rpx;
   height: 80rpx;
-  border: 6rpx solid #f3f3f3;
-  border-top: 6rpx solid #6a11cb;
-  border-radius: 50%;
+  border: 6rpx solid $uni-bg-color-grey;
+  border-top: 6rpx solid $uni-color-primary;
+  border-radius: $uni-border-radius-circle;
   animation: spin 1s linear infinite;
 }
 

@@ -149,4 +149,76 @@ export default {
       return request.delete(`/merchant/product/${id}`);
     },
   },
+
+  /**
+   * 上传图片
+   * @param {string} filePath - 文件路径
+   * @returns {Promise<string>} 返回图片URL
+   */
+  uploadImage(filePath) {
+    return new Promise((resolve, reject) => {
+      const token = uni.getStorageSync("token");
+      
+      uni.showLoading({ title: "上传中..." });
+      
+      uni.uploadFile({
+        url: "http://localhost:8080/merchant/upload",
+        filePath,
+        name: "file",
+        header: {
+          Authorization: "Bearer " + token,
+        },
+        success: (res) => {
+          uni.hideLoading();
+          
+          try {
+            const data = typeof res.data === "string" ? JSON.parse(res.data) : res.data;
+            if (data.code === 200) {
+              resolve(data.data || data.url || res.data);
+            } else {
+              uni.showToast({ title: data.msg || "上传失败", icon: "none" });
+              reject(new Error(data.msg || "上传失败"));
+            }
+          } catch (e) {
+            // 如果返回的不是JSON，直接使用返回的数据
+            resolve(res.data);
+          }
+        },
+        fail: (err) => {
+          uni.hideLoading();
+          uni.showToast({ title: "上传失败", icon: "none" });
+          reject(err);
+        },
+      });
+    });
+  },
+
+  // 订单相关接口
+  order: {
+    /**
+     * 获取订单列表
+     * @returns {Promise}
+     */
+    getList() {
+      return request.get("/merchant/orders");
+    },
+
+    /**
+     * 获取订单详情
+     * @param {number} orderId - 订单ID
+     * @returns {Promise}
+     */
+    getDetail(orderId) {
+      return request.get(`/merchant/order/${orderId}`);
+    },
+
+    /**
+     * 发货
+     * @param {number} orderId - 订单ID
+     * @returns {Promise}
+     */
+    deliver(orderId) {
+      return request.put(`/merchant/order/deliver/${orderId}`);
+    },
+  },
 };

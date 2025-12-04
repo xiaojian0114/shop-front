@@ -127,6 +127,8 @@
 </template>
 
 <script>
+import merchantApi from "@/api/merchant.js";
+
 export default {
   data() {
     return {
@@ -157,51 +159,34 @@ export default {
       this.error = "";
 
       try {
-        const res = await uni.request({
-          url: `http://localhost:8080/merchant/order/${this.orderId}`,
-          header: {
-            Authorization: "Bearer " + uni.getStorageSync("token"),
-            "Content-Type": "application/json",
-          },
-        });
+        const data = await merchantApi.order.getDetail(this.orderId);
+        this.order = data.order || {};
+        this.orderItems = data.orderItems || [];
 
-        if (res.statusCode === 403) {
+        if (!this.orderItems || this.orderItems.length === 0) {
+          console.log("后端返回的订单项为空，使用模拟数据");
+          this.orderItems = this.getMockOrderItems();
+        }
+
+        this.orderItems = this.orderItems.map((item) => ({
+          id: item.id || Math.random(),
+          productId: item.productId || 0,
+          productName: item.productName || "未知商品",
+          productImage: item.productImage || "/static/default-product.jpg",
+          price: item.price || 0,
+          quantity: item.quantity || 1,
+        }));
+      } catch (error) {
+        if (error.statusCode === 403) {
           this.error = "无权限查看此订单";
           uni.showToast({ title: "无权限查看此订单", icon: "none" });
-          return;
-        }
-
-        if (res.statusCode === 404) {
+        } else if (error.statusCode === 404) {
           this.error = "订单不存在";
           uni.showToast({ title: "订单不存在", icon: "none" });
-          return;
-        }
-
-        if (res.data && res.data.code === 200) {
-          const data = res.data.data;
-          this.order = data.order || {};
-          this.orderItems = data.orderItems || [];
-
-          if (!this.orderItems || this.orderItems.length === 0) {
-            console.log("后端返回的订单项为空，使用模拟数据");
-            this.orderItems = this.getMockOrderItems();
-          }
-
-          this.orderItems = this.orderItems.map((item) => ({
-            id: item.id || Math.random(),
-            productId: item.productId || 0,
-            productName: item.productName || "未知商品",
-            productImage: item.productImage || "/static/default-product.jpg",
-            price: item.price || 0,
-            quantity: item.quantity || 1,
-          }));
         } else {
-          this.error = res.data?.msg || "加载订单详情失败";
+          this.error = error.msg || "加载订单详情失败";
           uni.showToast({ title: this.error, icon: "none" });
         }
-      } catch (error) {
-        this.error = "网络错误，请稍后重试";
-        uni.showToast({ title: this.error, icon: "none" });
       } finally {
         this.loading = false;
       }
@@ -240,40 +225,20 @@ export default {
       return parseFloat(price).toFixed(2);
     },
 
-    deliverOrder() {
+    async deliverOrder() {
       uni.showModal({
         title: "确认发货",
         content: "确定要发货吗？",
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            uni.showLoading({ title: "发货中..." });
-
-            uni.request({
-              url: `http://localhost:8080/merchant/order/deliver/${this.orderId}`,
-              method: "PUT",
-              header: {
-                Authorization: "Bearer " + uni.getStorageSync("token"),
-              },
-              success: (res) => {
-                uni.hideLoading();
-                if (res.data.code === 200) {
-                  uni.showToast({ title: "发货成功", icon: "success" });
-
-                  this.order.status = 3;
-                  this.order.deliverTime = new Date().toISOString();
-                } else {
-                  uni.showToast({
-                    title: res.data.msg || "发货失败",
-                    icon: "none",
-                  });
-                }
-              },
-              fail: (err) => {
-                uni.hideLoading();
-                console.error("发货失败:", err);
-                uni.showToast({ title: "发货失败", icon: "none" });
-              },
-            });
+            try {
+              await merchantApi.order.deliver(this.orderId);
+              uni.showToast({ title: "发货成功", icon: "success" });
+              this.order.status = 3;
+              this.order.deliverTime = new Date().toISOString();
+            } catch (err) {
+              console.error("发货失败:", err);
+            }
           }
         },
       });
@@ -330,11 +295,11 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
-  padding: 30rpx;
+  padding: $uni-padding-base;
   padding-bottom: 140rpx;
-  background: #f5f7fa;
+  background: $uni-bg-color-page;
   min-height: 100vh;
 }
 
@@ -344,8 +309,8 @@ export default {
   justify-content: center;
   align-items: center;
   height: 400rpx;
-  font-size: 32rpx;
-  color: #666;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color-secondary;
 }
 
 /* 错误状态 */
@@ -354,68 +319,75 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 200rpx 40rpx;
+  padding: 200rpx $uni-padding-lg;
   text-align: center;
 }
 
 .error-img {
   width: 200rpx;
   height: 200rpx;
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-padding-lg;
   opacity: 0.6;
 }
 
 .error-text {
-  font-size: 32rpx;
-  color: #999;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color-placeholder;
   margin-bottom: 60rpx;
   line-height: 1.5;
 }
 
 .back-btn {
-  background: #ff6b35;
-  color: #fff;
-  padding: 24rpx 60rpx;
-  border-radius: 12rpx;
-  font-size: 30rpx;
+  background: $uni-color-primary;
+  color: $uni-text-color-inverse;
+  padding: $uni-padding-sm 60rpx;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
   min-width: 200rpx;
+  box-shadow: $uni-shadow-button;
+  transition: all $uni-transition-duration-base;
+}
+
+.back-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 /* 其他样式保持不变 */
 .order-status {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 40rpx;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-lg;
   text-align: center;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: $uni-margin-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .status-text {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #ff6b35;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-color-primary;
   display: block;
   margin-bottom: 15rpx;
 }
 
 .status-desc {
-  font-size: 28rpx;
-  color: #999;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-placeholder;
 }
 
 .info-card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  margin-bottom: $uni-margin-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .card-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
   margin-bottom: 25rpx;
   display: block;
 }
@@ -424,8 +396,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: $uni-margin-sm 0;
+  border-bottom: 1rpx solid $uni-border-color-light;
 }
 
 .info-item:last-child {
@@ -433,14 +405,14 @@ export default {
 }
 
 .label {
-  font-size: 28rpx;
-  color: #666;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
 }
 
 .value {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  font-weight: $uni-font-weight-medium;
 }
 
 /* 商品列表样式 */
@@ -454,17 +426,17 @@ export default {
 .goods-item {
   display: flex;
   align-items: center;
-  padding: 20rpx;
-  background: #f9f9f9;
-  border-radius: 12rpx;
+  padding: $uni-margin-sm;
+  background: $uni-bg-color-grey;
+  border-radius: $uni-border-radius-base;
 }
 
 .goods-image {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 12rpx;
-  margin-right: 20rpx;
-  background: #f5f5f5;
+  border-radius: $uni-border-radius-base;
+  margin-right: $uni-margin-sm;
+  background: $uni-bg-color-grey;
 }
 
 .goods-info {
@@ -472,9 +444,9 @@ export default {
 }
 
 .goods-name {
-  font-size: 30rpx;
-  font-weight: 500;
-  color: #333;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-medium;
+  color: $uni-text-color;
   display: block;
   margin-bottom: 15rpx;
   line-height: 1.4;
@@ -487,14 +459,14 @@ export default {
 }
 
 .goods-price {
-  font-size: 28rpx;
-  color: #ff6b35;
-  font-weight: 600;
+  font-size: $uni-font-size-base;
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-semibold;
 }
 
 .goods-quantity {
-  font-size: 26rpx;
-  color: #666;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-secondary;
 }
 
 /* 订单总额 */
@@ -502,47 +474,50 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #f0f0f0;
-  margin-top: 20rpx;
+  padding-top: $uni-margin-sm;
+  border-top: 1rpx solid $uni-border-color-light;
+  margin-top: $uni-margin-sm;
 }
 
 .total-label {
-  font-size: 30rpx;
-  color: #333;
-  font-weight: 500;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  font-weight: $uni-font-weight-medium;
 }
 
 .total-amount {
-  font-size: 32rpx;
-  color: #ff6b35;
-  font-weight: 600;
+  font-size: $uni-font-size-lg;
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-semibold;
 }
 
 .action-buttons {
-  padding: 30rpx;
-  background: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
-  margin-top: 30rpx;
+  padding: $uni-padding-base;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  box-shadow: $uni-shadow-sm;
+  margin-top: $uni-margin-base;
 }
 
 .action-btn {
   width: 100%;
   height: 80rpx;
-  border-radius: 16rpx;
-  font-size: 30rpx;
-  font-weight: 500;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-medium;
   border: none;
+  transition: all $uni-transition-duration-base;
 }
 
 .deliver-btn {
-  background: #ff6b35;
-  color: #fff;
+  background: $uni-color-primary;
+  color: $uni-text-color-inverse;
+  box-shadow: $uni-shadow-button;
 }
 
 .deliver-btn:active {
-  background: #e55a2b;
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 /* 商家底栏 */
@@ -552,11 +527,11 @@ export default {
   right: 0;
   bottom: 0;
   height: 120rpx;
-  background: #fff;
-  border-top: 1rpx solid #eee;
+  background: $uni-bg-color;
+  border-top: 1rpx solid $uni-border-color-light;
   display: flex;
-  z-index: 9999;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  z-index: $uni-z-index-fixed;
+  box-shadow: $uni-shadow-lg;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -566,24 +541,24 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
-  font-size: 24rpx;
-  transition: color 0.3s;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-sm;
+  transition: color $uni-transition-duration-base;
 }
 
 .tab-item .icon {
   width: 52rpx;
   height: 52rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .tab-item.active {
-  color: #ff6b35;
+  color: $uni-color-primary;
 }
 
 @media (max-width: 750rpx) {
   .container {
-    padding: 20rpx;
+    padding: $uni-margin-sm;
     padding-bottom: 140rpx;
   }
 

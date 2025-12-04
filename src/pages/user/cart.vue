@@ -287,55 +287,54 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .cart-page {
-  background: #f8f9fb;
+  background: $uni-bg-color-page;
   min-height: 100vh;
-  /* 移除原来的 padding-bottom，改为在列表底部添加占位 */
 }
 
 /* 头部 */
 .header {
   height: 120rpx;
-  padding: 0 40rpx;
-  background: #fff;
+  padding: 0 $uni-padding-lg;
+  background: $uni-bg-color;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid $uni-border-color-light;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: $uni-z-index-sticky;
+  box-shadow: $uni-shadow-sm;
 }
 
 .title {
   font-size: 38rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
 }
 
 .edit-btn {
-  font-size: 32rpx;
-  color: #3875ff;
-  font-weight: 500;
+  font-size: $uni-font-size-lg;
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-medium;
 }
 
 /* 商品列表 */
 .list {
-  padding: 30rpx;
-  /* 添加底部内边距，为底部操作栏留出空间 */
+  padding: $uni-padding-base;
   padding-bottom: 160rpx;
 }
 
 .item {
-  background: #fff;
-  border-radius: 24rpx;
-  margin-bottom: 24rpx;
-  padding: 30rpx;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-xl;
+  margin-bottom: $uni-margin-sm;
+  padding: $uni-padding-base;
   display: flex;
   align-items: center;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
+  box-shadow: $uni-shadow-card;
+  transition: all $uni-transition-duration-base;
   position: relative;
 }
 
@@ -345,42 +344,42 @@ export default {
 
 /* 勾选框 */
 .checkbox-wrapper {
-  margin-right: 24rpx;
+  margin-right: $uni-margin-sm;
 }
 
 .checkbox {
   width: 44rpx;
   height: 44rpx;
-  border: 2rpx solid #ddd;
-  border-radius: 50%;
+  border: 2rpx solid $uni-border-color;
+  border-radius: $uni-border-radius-circle;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all $uni-transition-duration-base;
 }
 
 .checkbox.checked {
-  background: #3875ff;
-  border-color: #3875ff;
+  background: $uni-color-primary;
+  border-color: $uni-color-primary;
 }
 
 .check-icon {
-  color: #fff;
-  font-size: 28rpx;
-  font-weight: bold;
+  color: $uni-text-color-inverse;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-bold;
 }
 
 /* 商品图片 */
 .thumb-wrapper {
   position: relative;
-  margin-right: 24rpx;
+  margin-right: $uni-margin-sm;
 }
 
 .thumb {
   width: 180rpx;
   height: 180rpx;
-  border-radius: 16rpx;
-  background: #f8f9fa;
+  border-radius: $uni-border-radius-base;
+  background: $uni-bg-color-grey;
 }
 
 .thumb-overlay {
@@ -390,7 +389,7 @@ export default {
   right: 0;
   bottom: 0;
   background: rgba(255, 255, 255, 0.7);
-  border-radius: 16rpx;
+  border-radius: $uni-border-radius-base;
 }
 
 /* 内容区域 */
@@ -402,20 +401,21 @@ export default {
 }
 
 .name {
-  font-size: 32rpx;
-  color: #333;
-  line-height: 1.4;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
+  line-height: $uni-line-height-base;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 12rpx;
+  margin-bottom: $uni-spacing-sm;
 }
 
 .spec {
-  font-size: 26rpx;
-  color: #999;
-  margin-bottom: 20rpx;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
+  margin-bottom: $uni-margin-sm;
 }
 
 .bottom-row {
@@ -426,9 +426,9 @@ export default {
 }
 
 .price {
-  font-size: 36rpx;
-  color: #ff4444;
-  font-weight: bold;
+  font-size: $uni-font-size-xl;
+  color: $uni-color-price-highlight;
+  font-weight: $uni-font-weight-bold;
 }
 
 /* 数量控制器 */
@@ -436,9 +436,9 @@ export default {
   display: flex;
   align-items: center;
   height: 60rpx;
-  border-radius: 30rpx;
+  border-radius: $uni-border-radius-round;
   overflow: hidden;
-  background: #f8f9fa;
+  background: $uni-bg-color-grey;
 }
 
 .stepper-btn {
@@ -447,41 +447,41 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
-  transition: all 0.2s ease;
+  background: $uni-bg-color;
+  transition: all $uni-transition-duration-fast;
 }
 
 .stepper-btn:active {
-  background: #f0f0f0;
+  background: $uni-bg-color-hover;
 }
 
 .stepper-btn.disabled {
-  background: #f8f9fa;
+  background: $uni-bg-color-grey;
 }
 
 .stepper-btn.disabled .btn-text {
-  color: #ccc;
+  color: $uni-text-color-disabled;
 }
 
 .btn-text {
-  font-size: 32rpx;
-  color: #3875ff;
-  font-weight: bold;
+  font-size: $uni-font-size-lg;
+  color: $uni-color-primary;
+  font-weight: $uni-font-weight-bold;
 }
 
 .stepper-input {
   width: 80rpx;
   height: 60rpx;
   text-align: center;
-  font-size: 28rpx;
-  color: #333;
-  background: #fff;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  background: $uni-bg-color;
 }
 
 /* 删除按钮 */
 .delete-wrapper {
   position: absolute;
-  right: 30rpx;
+  right: $uni-padding-base;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -489,66 +489,78 @@ export default {
 .delete-btn {
   width: 80rpx;
   height: 80rpx;
-  background: #ff4444;
-  border-radius: 50%;
+  background: $uni-color-error;
+  border-radius: $uni-border-radius-circle;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(255, 68, 68, 0.3);
+  box-shadow: $uni-shadow-base;
+  transition: all $uni-transition-duration-base;
+}
+
+.delete-btn:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .delete-icon {
-  color: #fff;
+  color: $uni-text-color-inverse;
   font-size: 40rpx;
-  font-weight: bold;
+  font-weight: $uni-font-weight-bold;
 }
 
 /* 空状态 */
 .empty {
   text-align: center;
-  padding: 200rpx 40rpx 300rpx;
+  padding: 200rpx $uni-padding-lg 300rpx;
 }
 
 .empty-icon {
   font-size: 160rpx;
-  margin-bottom: 40rpx;
+  margin-bottom: $uni-margin-lg;
   opacity: 0.3;
 }
 
 .empty-text {
   display: block;
   font-size: 34rpx;
-  color: #999;
-  margin-bottom: 20rpx;
+  color: $uni-text-color-placeholder;
+  margin-bottom: $uni-margin-sm;
 }
 
 .empty-tip {
   display: block;
-  font-size: 28rpx;
-  color: #ccc;
-  margin-bottom: 60rpx;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-disabled;
+  margin-bottom: $uni-margin-xl;
 }
 
 .empty-btn {
   width: 280rpx;
   height: 80rpx;
   line-height: 80rpx;
-  background: linear-gradient(135deg, #3875ff, #6a11cb);
-  color: #fff;
-  border-radius: 40rpx;
-  font-size: 32rpx;
-  box-shadow: 0 8rpx 24rpx rgba(56, 117, 255, 0.3);
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
+  border-radius: $uni-border-radius-round;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-medium;
+  box-shadow: $uni-shadow-button;
+  transition: all $uni-transition-duration-base;
 }
 
-/* 底部操作栏 - 修复位置 */
+.empty-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
+}
+
+/* 底部操作栏 */
 .footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
-  /* 关键修复：设置安全区域适配 */
+  background: $uni-bg-color;
+  box-shadow: $uni-shadow-lg;
+  z-index: $uni-z-index-fixed;
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -557,11 +569,10 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 40rpx;
+  padding: $uni-padding-sm $uni-padding-lg;
   max-width: 750rpx;
   margin: 0 auto;
-  /* 确保内容在安全区域内 */
-  min-height: 300rpx;
+  min-height: 100rpx;
 }
 
 .left {
@@ -577,12 +588,12 @@ export default {
 }
 
 .check-all .checkbox {
-  margin-right: 16rpx;
+  margin-right: $uni-padding-xs;
 }
 
 .check-all-text {
-  font-size: 32rpx;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  color: $uni-text-color;
 }
 
 /* 合计信息 */
@@ -592,20 +603,20 @@ export default {
 }
 
 .total-text {
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 8rpx;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
+  margin-bottom: $uni-spacing-xs;
 }
 
 .amount {
-  font-size: 36rpx;
-  color: #ff4444;
-  font-weight: bold;
+  font-size: $uni-font-size-xl;
+  color: $uni-color-price-highlight;
+  font-weight: $uni-font-weight-bold;
 }
 
 .total-tip {
-  font-size: 24rpx;
-  color: #999;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
 }
 
 /* 操作按钮 */
@@ -613,24 +624,29 @@ export default {
   width: 240rpx;
   height: 80rpx;
   line-height: 80rpx;
-  border-radius: 40rpx;
-  font-size: 32rpx;
-  font-weight: 500;
-  color: #fff;
-  background: linear-gradient(135deg, #3875ff, #6a11cb);
-  box-shadow: 0 8rpx 24rpx rgba(56, 117, 255, 0.3);
-  transition: all 0.3s ease;
+  border-radius: $uni-border-radius-round;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-medium;
+  color: $uni-text-color-inverse;
+  background: $uni-color-primary-gradient;
+  box-shadow: $uni-shadow-button;
+  transition: all $uni-transition-duration-base;
+}
+
+.action-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 .action-btn.delete-mode {
-  background: linear-gradient(135deg, #ff6b6b, #ff4444);
+  background: linear-gradient(135deg, #ff6b6b, $uni-color-error);
   box-shadow: 0 8rpx 24rpx rgba(255, 68, 68, 0.3);
 }
 
 .action-btn.disabled {
-  background: #ccc;
+  background: $uni-text-color-disabled;
   box-shadow: none;
-  transform: scale(0.95);
+  opacity: $uni-opacity-disabled;
 }
 
 /* 动画效果 */

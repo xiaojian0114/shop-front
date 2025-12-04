@@ -48,7 +48,8 @@
 </template>
 
 <script>
-import request from "@/utils/request.js";
+import productApi from "@/api/product.js";
+import userApi from "@/api/user.js";
 
 export default {
   data() {
@@ -81,7 +82,7 @@ export default {
   methods: {
     async loadDetail() {
       try {
-        const data = await request.get(`/user/product/${this.id}`);
+        const data = await productApi.getProductDetail(this.id);
         this.goods = data;
 
         // 处理图片
@@ -108,7 +109,7 @@ export default {
     // 新增：加载店铺信息
     async loadShopInfo(shopId) {
       try {
-        const shop = await request.get(`/user/shop/info/${shopId}`); // 你后端要有一个这个接口
+        const shop = await userApi.getShopInfo(shopId);
         this.shopInfo = shop || {};
       } catch (err) {
         this.shopInfo = {
@@ -124,9 +125,11 @@ export default {
         return;
       }
       try {
-        await request.post("/user/cart/add", { productId: this.id, num: 1 });
+        await userApi.addToCart({ productId: this.id, num: 1 });
         uni.showToast({ title: "加入购物车成功", icon: "success" });
-      } catch (err) {}
+      } catch (err) {
+        console.error("加入购物车失败:", err);
+      }
     },
 
     buyNow() {
@@ -157,101 +160,107 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .detail-page {
-  background: #fff;
+  background: $uni-bg-color;
   min-height: 100vh;
   padding-bottom: 120rpx;
 }
 .banner {
   height: 750rpx;
+  background: $uni-bg-color-grey;
 }
 .banner image {
   width: 100%;
   height: 100%;
 }
 .info {
-  padding: 30rpx;
-  background: #fff;
+  padding: $uni-padding-base;
+  background: $uni-bg-color;
 }
 .price-line {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: $uni-margin-sm;
 }
 .price {
   font-size: 48rpx;
-  color: #ff5500;
-  font-weight: bold;
+  color: $uni-color-price;
+  font-weight: $uni-font-weight-bold;
 }
 .sales {
-  color: #999;
-  font-size: 28rpx;
+  color: $uni-text-color-placeholder;
+  font-size: $uni-font-size-base;
 }
 .name {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
   display: block;
-  line-height: 1.4;
+  line-height: $uni-line-height-base;
 }
 
 /* 店铺信息样式 */
 .shop-info {
   display: flex;
   align-items: center;
-  padding: 30rpx;
-  background: #f8f9fb;
-  margin: 20rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+  padding: $uni-padding-base;
+  background: $uni-bg-color-grey;
+  margin: $uni-margin-sm;
+  border-radius: $uni-border-radius-lg;
+  box-shadow: $uni-shadow-sm;
+  transition: all $uni-transition-duration-base;
+}
+.shop-info:active {
+  background: $uni-bg-color-hover;
 }
 .shop-info .avatar {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 50%;
-  margin-right: 24rpx;
-  background: #eee;
+  border-radius: $uni-border-radius-circle;
+  margin-right: $uni-margin-sm;
+  background: $uni-bg-color-grey;
 }
 .shop-right {
   flex: 1;
 }
 .shop-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
   display: block;
 }
 .shop-desc {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 8rpx;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
+  margin-top: $uni-spacing-xs;
 }
 .arrow {
-  color: #ddd;
+  color: $uni-border-color;
   font-size: 40rpx;
 }
 
-/* 其他样式保持不变 */
+/* 商品详情 */
 .section {
-  margin: 20rpx;
-  background: #fff;
-  border-radius: 20rpx;
+  margin: $uni-margin-sm;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
   overflow: hidden;
+  box-shadow: $uni-shadow-sm;
 }
 .section-title {
-  padding: 30rpx 30rpx 20rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  border-bottom: 2rpx solid #f0f0f0;
+  padding: $uni-padding-base $uni-padding-base $uni-padding-sm;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
+  border-bottom: 2rpx solid $uni-border-color-light;
 }
 .desc {
-  padding: 30rpx;
-  color: #666;
-  line-height: 52rpx;
-  font-size: 30rpx;
+  padding: $uni-padding-base;
+  color: $uni-text-color-secondary;
+  line-height: $uni-line-height-lg;
+  font-size: $uni-font-size-base;
 }
 .desc image {
   max-width: 100% !important;
@@ -264,19 +273,30 @@ export default {
   right: 0;
   display: flex;
   height: 100rpx;
-  background: #fff;
-  box-shadow: 0 -2rpx 20rpx rgba(0, 0, 0, 0.05);
+  background: $uni-bg-color;
+  box-shadow: $uni-shadow-lg;
+  z-index: $uni-z-index-fixed;
 }
 .cart-btn {
   flex: 1;
-  background: #fff;
-  color: #333;
-  font-size: 32rpx;
+  background: $uni-bg-color;
+  color: $uni-text-color;
+  font-size: $uni-font-size-lg;
+  border-right: 1rpx solid $uni-border-color-light;
+  transition: all $uni-transition-duration-base;
+}
+.cart-btn:active {
+  background: $uni-bg-color-hover;
 }
 .buy-btn {
   flex: 1;
-  background: #ff5500;
-  color: #fff;
-  font-size: 32rpx;
+  background: $uni-color-primary-gradient;
+  color: $uni-text-color-inverse;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-semibold;
+  transition: all $uni-transition-duration-base;
+}
+.buy-btn:active {
+  background: $uni-color-primary-dark;
 }
 </style>

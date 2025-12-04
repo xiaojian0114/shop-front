@@ -91,6 +91,8 @@
 </template>
 
 <script>
+import merchantApi from "@/api/merchant.js";
+
 export default {
   data() {
     return {
@@ -112,63 +114,38 @@ export default {
     }, 1000);
   },
   methods: {
-    loadShopDetail() {
-      uni.request({
-        url: `http://localhost:8080/merchant/shop/info`,
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        success: (res) => {
-          if (res.data.code === 200) {
-            this.shopDetail = res.data.data || {};
-          }
-        },
-      });
+    async loadShopDetail() {
+      try {
+        this.shopDetail = await merchantApi.getShopInfo();
+      } catch (err) {
+        console.error("加载店铺信息失败:", err);
+      }
     },
 
-    loadProducts() {
+    async loadProducts() {
       if (!this.shopId) return;
 
-      uni.request({
-        url: `http://localhost:8080/merchant/products?shopId=${this.shopId}`,
-        header: { Authorization: "Bearer " + uni.getStorageSync("token") },
-        success: (res) => {
-          if (res.data.code === 200) {
-            this.products = res.data.data || [];
-          }
-        },
-        fail: (err) => {
-          console.error("加载商品失败:", err);
-          uni.showToast({ title: "加载商品失败", icon: "none" });
-        },
-      });
+      try {
+        this.products = await merchantApi.product.getList(this.shopId);
+      } catch (err) {
+        console.error("加载商品失败:", err);
+        uni.showToast({ title: "加载商品失败", icon: "none" });
+      }
     },
 
-    offProduct(productId) {
+    async offProduct(productId) {
       uni.showModal({
         title: "确认下架",
         content: "确定要下架这个商品吗？",
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            uni.request({
-              url: `http://localhost:8080/merchant/product/off/${productId}`,
-              method: "PUT",
-              header: {
-                Authorization: "Bearer " + uni.getStorageSync("token"),
-              },
-              success: (res) => {
-                if (res.data.code === 200) {
-                  uni.showToast({ title: "下架成功", icon: "success" });
-                  this.loadProducts(); // 重新加载商品列表
-                } else {
-                  uni.showToast({
-                    title: res.data.msg || "下架失败",
-                    icon: "none",
-                  });
-                }
-              },
-              fail: () => {
-                uni.showToast({ title: "下架失败", icon: "none" });
-              },
-            });
+            try {
+              await merchantApi.product.offSale(productId);
+              uni.showToast({ title: "下架成功", icon: "success" });
+              this.loadProducts(); // 重新加载商品列表
+            } catch (err) {
+              console.error("下架失败:", err);
+            }
           }
         },
       });
@@ -191,29 +168,29 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
-  padding: 30rpx;
-  background: #f5f7fa;
+  padding: $uni-padding-base;
+  background: $uni-bg-color-page;
   min-height: 100vh;
 }
 
 /* 店铺头部信息 */
 .header {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 40rpx;
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-lg;
   display: flex;
   align-items: center;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: $uni-margin-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .shop-logo {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 20rpx;
-  margin-right: 30rpx;
+  border-radius: $uni-border-radius-lg;
+  margin-right: $uni-margin-base;
 }
 
 .shop-info {
@@ -223,47 +200,47 @@ export default {
 }
 
 .shop-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: $uni-font-size-xl;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
   margin-bottom: 15rpx;
 }
 
 .status {
-  font-size: 26rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 20rpx;
+  font-size: $uni-font-size-sm;
+  padding: $uni-spacing-xs $uni-margin-sm;
+  border-radius: $uni-border-radius-lg;
   align-self: flex-start;
 }
 
 .status.success {
   background: rgba(7, 193, 96, 0.1);
-  color: #07c160;
+  color: $uni-color-success;
 }
 
 .status.pending {
   background: rgba(255, 153, 0, 0.1);
-  color: #ff9900;
+  color: $uni-color-warning;
 }
 
 /* 内容区域 */
 .content {
-  padding: 0 10rpx;
-  margin-bottom: 30rpx;
+  padding: 0 $uni-spacing-xs;
+  margin-bottom: $uni-margin-base;
 }
 
 .info-card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .card-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 30rpx;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
+  margin-bottom: $uni-margin-base;
   display: block;
 }
 
@@ -271,8 +248,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: $uni-margin-sm 0;
+  border-bottom: 1rpx solid $uni-border-color-light;
 }
 
 .info-item:last-child {
@@ -280,69 +257,69 @@ export default {
 }
 
 .label {
-  font-size: 28rpx;
-  color: #666;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-secondary;
 }
 
 .value {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
+  font-weight: $uni-font-weight-medium;
 }
 
 /* 商品列表区域 */
 .product-section {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: $uni-bg-color;
+  border-radius: $uni-border-radius-lg;
+  padding: $uni-padding-base;
+  box-shadow: $uni-shadow-sm;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30rpx;
-  padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  margin-bottom: $uni-margin-base;
+  padding-bottom: $uni-margin-sm;
+  border-bottom: 1rpx solid $uni-border-color-light;
 }
 
 .section-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: $uni-font-size-lg;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
 }
 
 .product-count {
-  font-size: 26rpx;
-  color: #999;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
 }
 
 /* 商品列表 */
 .product-list {
   display: flex;
   flex-direction: column;
-  gap: 30rpx;
+  gap: $uni-margin-base;
 }
 
 .product-card {
   display: flex;
   padding: 25rpx;
-  background: #fafafa;
-  border-radius: 16rpx;
-  border: 1rpx solid #f0f0f0;
-  transition: all 0.3s ease;
+  background: $uni-bg-color-grey;
+  border-radius: $uni-border-radius-base;
+  border: 1rpx solid $uni-border-color-light;
+  transition: all $uni-transition-duration-base;
 }
 
 .product-card:active {
-  background: #f5f5f5;
+  background: $uni-bg-color-hover;
   transform: translateY(2rpx);
 }
 
 .product-image {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 12rpx;
+  border-radius: $uni-border-radius-base;
   margin-right: 25rpx;
   flex-shrink: 0;
 }
@@ -355,10 +332,10 @@ export default {
 }
 
 .product-name {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10rpx;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-text-color;
+  margin-bottom: $uni-spacing-xs;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -367,8 +344,8 @@ export default {
 }
 
 .product-desc {
-  font-size: 26rpx;
-  color: #999;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
   margin-bottom: 15rpx;
   line-height: 1.4;
   display: -webkit-box;
@@ -384,39 +361,45 @@ export default {
 }
 
 .product-price {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #ff6b35;
+  font-size: $uni-font-size-base;
+  font-weight: $uni-font-weight-semibold;
+  color: $uni-color-primary;
 }
 
 .product-sales {
-  font-size: 24rpx;
-  color: #999;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
 }
 
 /* 商品操作 */
 .product-actions {
   display: flex;
   align-items: center;
-  margin-left: 20rpx;
+  margin-left: $uni-margin-sm;
 }
 
 .action-btn {
-  padding: 12rpx 24rpx;
-  border-radius: 12rpx;
-  font-size: 24rpx;
+  padding: $uni-padding-xs $uni-padding-sm;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-sm;
   min-width: 100rpx;
+  transition: all $uni-transition-duration-base;
 }
 
 .off-btn {
-  background: #ff4444;
-  color: #fff;
+  background: $uni-color-error;
+  color: $uni-text-color-inverse;
+}
+
+.off-btn:active {
+  transform: translateY(2rpx);
+  opacity: 0.9;
 }
 
 .off-text {
-  font-size: 24rpx;
-  color: #999;
-  padding: 12rpx 0;
+  font-size: $uni-font-size-sm;
+  color: $uni-text-color-placeholder;
+  padding: $uni-padding-xs 0;
 }
 
 /* 空商品状态 */
@@ -425,44 +408,51 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80rpx 40rpx;
+  padding: 80rpx $uni-padding-lg;
   text-align: center;
 }
 
 .empty-img {
   width: 200rpx;
   height: 200rpx;
-  margin-bottom: 30rpx;
+  margin-bottom: $uni-margin-base;
   opacity: 0.6;
 }
 
 .empty-text {
-  font-size: 28rpx;
-  color: #999;
-  margin-bottom: 40rpx;
+  font-size: $uni-font-size-base;
+  color: $uni-text-color-placeholder;
+  margin-bottom: $uni-padding-lg;
 }
 
 .add-product-btn {
-  background: #ff6b35;
-  color: #fff;
-  padding: 20rpx 40rpx;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+  background: $uni-color-primary;
+  color: $uni-text-color-inverse;
+  padding: $uni-margin-sm $uni-padding-lg;
+  border-radius: $uni-border-radius-base;
+  font-size: $uni-font-size-base;
   min-width: 200rpx;
+  box-shadow: $uni-shadow-button;
+  transition: all $uni-transition-duration-base;
+}
+
+.add-product-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: $uni-shadow-button-hover;
 }
 
 /* 响应式调整 */
 @media (max-width: 750rpx) {
   .container {
-    padding: 20rpx;
+    padding: $uni-margin-sm;
   }
 
   .header {
-    padding: 30rpx;
+    padding: $uni-padding-base;
   }
 
   .product-card {
-    padding: 20rpx;
+    padding: $uni-margin-sm;
   }
 
   .product-image {
