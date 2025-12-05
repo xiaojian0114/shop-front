@@ -22,14 +22,42 @@
           @tap="viewGoodsDetail(g.id)"
         >
           <image :src="getGoodsImage(g)" class="goods-img" mode="aspectFill" />
+
           <view class="info">
-            <text class="name">{{ g.name }}</text>
-            <text class="price">¥{{ formatPrice(g.price) }}</text>
-            <text class="stock">库存: {{ g.stock || 0 }}</text>
+            <view class="row">
+              <text class="name">{{ g.name }}</text>
+              <text
+                class="status-tag"
+                :class="g.isOnSale === 1 ? 'on' : 'off'"
+              >
+                {{ g.isOnSale === 1 ? "销售中" : "已下架" }}
+              </text>
+            </view>
+
+            <view class="meta">
+              <text class="price">¥{{ formatPrice(g.price) }}</text>
+              <text class="stock">库存 {{ g.stock || 0 }}</text>
+            </view>
+
+            <view class="actions" @tap.stop>
+              <button
+                size="mini"
+                :type="g.isOnSale === 1 ? 'warn' : 'primary'"
+                class="action-btn"
+                @tap="toggleSale(g)"
+              >
+                {{ g.isOnSale === 1 ? "下架" : "上架" }}
+              </button>
+              <button
+                size="mini"
+                plain
+                class="action-btn ghost"
+                @tap="viewGoodsDetail(g.id)"
+              >
+                详情
+              </button>
+            </view>
           </view>
-          <button size="mini" type="warn" @tap.stop="offSale(g.id)">
-            下架
-          </button>
         </view>
 
         <!-- 空状态 -->
@@ -84,6 +112,7 @@
 
 <script>
 import merchantApi from "@/api/merchant.js";
+import { getProductImageUrl } from "@/utils/image.js";
 
 export default {
   data() {
@@ -155,13 +184,13 @@ export default {
       await this.loadGoods();
     },
 
-    // 加载商品列表
+    // 加载商品列表（包含下架）
     async loadGoods() {
       if (!this.currentShop) return;
 
       this.loading = true;
       try {
-        const goods = await merchantApi.product.getList(this.currentShop.id);
+        const goods = await merchantApi.product.getAll(this.currentShop.id);
         this.goods = goods || [];
       } catch (error) {
         console.error("加载商品列表失败:", error);
@@ -171,22 +200,27 @@ export default {
       }
     },
 
-    // 下架商品
-    async offSale(id) {
+    // 上/下架
+    async toggleSale(goods) {
+      const isOn = goods.isOnSale === 1;
       uni.showModal({
-        title: "确认下架",
-        content: "确定要下架该商品吗？",
+        title: isOn ? "确认下架" : "确认上架",
+        content: isOn ? "确定要下架该商品吗？" : "确定要上架该商品吗？",
         confirmColor: "#ff6b00",
         success: async (res) => {
-          if (res.confirm) {
-            try {
-              await merchantApi.product.offSale(id);
+          if (!res.confirm) return;
+          try {
+            if (isOn) {
+              await merchantApi.product.offSale(goods.id);
               uni.showToast({ title: "下架成功", icon: "success" });
-              this.loadGoods(); // 重新加载商品列表
-            } catch (error) {
-              console.error("下架商品失败:", error);
-              uni.showToast({ title: "下架失败", icon: "none" });
+            } else {
+              await merchantApi.product.onSale(goods.id);
+              uni.showToast({ title: "上架成功", icon: "success" });
             }
+            this.loadGoods();
+          } catch (error) {
+            console.error("上下架失败:", error);
+            uni.showToast({ title: "操作失败", icon: "none" });
           }
         },
       });
@@ -206,14 +240,7 @@ export default {
 
     // 获取商品图片
     getGoodsImage(goods) {
-      if (!goods.image) return "/static/default.jpg";
-
-      let imageUrl = goods.image;
-      if (imageUrl && !imageUrl.startsWith("http")) {
-        imageUrl = "http://localhost:8080" + imageUrl;
-      }
-
-      return imageUrl;
+      return getProductImageUrl(goods?.image);
     },
 
     // 格式化价格
@@ -302,6 +329,9 @@ export default {
 
 .info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $uni-spacing-xs;
 }
 
 .name {
@@ -311,6 +341,39 @@ export default {
   font-size: $uni-font-size-base;
   color: $uni-text-color;
   line-height: $uni-line-height-base;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $uni-spacing-sm;
+}
+
+.status-tag {
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: $uni-font-size-sm;
+  line-height: 1.2;
+  border: 1rpx solid transparent;
+}
+
+.status-tag.on {
+  color: #07c160;
+  background: rgba(7, 193, 96, 0.08);
+  border-color: rgba(7, 193, 96, 0.25);
+}
+
+.status-tag.off {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.08);
+  border-color: rgba(255, 68, 68, 0.2);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: $uni-spacing-lg;
 }
 
 .price {
@@ -325,6 +388,22 @@ export default {
   font-size: $uni-font-size-sm;
   color: $uni-text-color-secondary;
   display: block;
+}
+
+.actions {
+  margin-top: $uni-spacing-xs;
+  display: flex;
+  align-items: center;
+  gap: $uni-spacing-sm;
+}
+
+.action-btn {
+  min-width: 140rpx;
+}
+
+.action-btn.ghost {
+  border-color: $uni-border-color;
+  color: $uni-text-color;
 }
 
 /* 空状态 */

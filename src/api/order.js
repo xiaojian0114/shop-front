@@ -59,6 +59,8 @@ export default {
    * @returns {Promise}
    */
   confirmReceipt(orderId) {
-    return request.put(`/user/order/receive/${orderId}`);
+    console.log("API调用 - 确认收货，订单ID:", orderId);
+    console.log("API调用 - 请求路径:", `/user/order/receive/${orderId}`);
+    return request.put(`/user/order/receive/${orderId}`, {}, { loading: false });
   },
 };

@@ -3,13 +3,13 @@
     <!-- 头部 -->
     <view class="header">
       <text class="title">购物车</text>
-      <text class="edit-btn" @tap="toggleEdit">
+      <text class="edit-btn" @tap="toggleEdit" v-if="cartList.length">
         {{ isEditing ? "完成" : "管理" }}
       </text>
     </view>
 
     <!-- 商品列表 -->
-    <view class="list">
+    <scroll-view class="list" scroll-y :scroll-top="scrollTop" @scroll="onScroll">
       <view
         class="item"
         v-for="item in cartList"
@@ -77,7 +77,7 @@
         <text class="empty-tip">快去挑选心仪的商品吧</text>
         <button class="empty-btn" @tap="goHome">去逛逛</button>
       </view>
-    </view>
+    </scroll-view>
 
     <!-- 底部操作栏 -->
     <view class="footer" v-if="cartList.length">
@@ -125,6 +125,7 @@ export default {
     return {
       isEditing: false,
       cartList: [],
+      scrollTop: 0,
     };
   },
 
@@ -176,6 +177,11 @@ export default {
     // 切换编辑模式
     toggleEdit() {
       this.isEditing = !this.isEditing;
+      // 切换编辑模式时，如果退出编辑模式，确保有选中商品
+      if (!this.isEditing && this.selectedCount === 0 && this.cartList.length > 0) {
+        // 退出编辑模式时，如果没有任何选中，默认全选
+        this.cartList.forEach((item) => (item.checked = true));
+      }
     },
 
     // 单选
@@ -207,8 +213,12 @@ export default {
 
     // 验证数量输入
     validateNum(item) {
-      if (item.num < 1) {
+      const num = parseInt(item.num) || 1;
+      if (num < 1) {
         item.num = 1;
+        this.changeNum(item, 0); // 同步到服务器
+      } else if (num !== item.num) {
+        item.num = num;
         this.changeNum(item, 0); // 同步到服务器
       }
     },
@@ -225,9 +235,15 @@ export default {
             try {
               await userApi.deleteCartItem({ productId: item.productId });
               uni.showToast({ title: "删除成功", icon: "success" });
-              this.loadCart();
+              // 重新加载购物车
+              await this.loadCart();
+              // 如果购物车为空，退出编辑模式
+              if (this.cartList.length === 0) {
+                this.isEditing = false;
+              }
             } catch (error) {
               console.log("删除失败:", error);
+              uni.showToast({ title: "删除失败", icon: "none" });
             } finally {
               uni.hideLoading();
             }
@@ -259,8 +275,15 @@ export default {
 
                 await userApi.batchDeleteCartItems(productIds);
                 uni.showToast({ title: "删除成功", icon: "success" });
-                this.loadCart();
-                this.isEditing = false;
+                // 重新加载购物车
+                await this.loadCart();
+                // 如果购物车为空，退出编辑模式
+                if (this.cartList.length === 0) {
+                  this.isEditing = false;
+                } else {
+                  // 如果还有商品，保持编辑模式
+                  this.isEditing = true;
+                }
               } catch (error) {
                 console.log("批量删除失败:", error);
               } finally {
@@ -283,6 +306,11 @@ export default {
     goHome() {
       uni.switchTab({ url: "/pages/user/index" });
     },
+
+    // 滚动事件
+    onScroll(e) {
+      // 可以在这里处理滚动逻辑
+    },
   },
 };
 </script>
@@ -291,6 +319,8 @@ export default {
 .cart-page {
   background: $uni-bg-color-page;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 头部 */
@@ -322,8 +352,13 @@ export default {
 
 /* 商品列表 */
 .list {
+  /* 使用flex:1让列表占据剩余空间 */
+  flex: 1;
   padding: $uni-padding-base;
-  padding-bottom: 160rpx;
+  padding-bottom: 200rpx; /* 底部操作栏 + tabBar */
+  box-sizing: border-box;
+  /* 头部是sticky定位，列表自然从头部下方开始，不需要padding-top */
+  overflow-y: auto;
 }
 
 .item {
@@ -555,24 +590,28 @@ export default {
 /* 底部操作栏 */
 .footer {
   position: fixed;
-  bottom: 0;
+  /* 为底部导航栏留出空间（tabBar高度约100rpx） */
+  bottom: 100rpx;
   left: 0;
   right: 0;
   background: $uni-bg-color;
-  box-shadow: $uni-shadow-lg;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
   z-index: $uni-z-index-fixed;
+  /* 安全区域适配 */
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1rpx solid $uni-border-color-light;
 }
 
 .footer-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: $uni-padding-sm $uni-padding-lg;
+  padding: $uni-padding-base $uni-padding-lg;
   max-width: 750rpx;
   margin: 0 auto;
   min-height: 100rpx;
+  box-sizing: border-box;
 }
 
 .left {
@@ -621,16 +660,19 @@ export default {
 
 /* 操作按钮 */
 .action-btn {
-  width: 240rpx;
-  height: 80rpx;
-  line-height: 80rpx;
+  min-width: 200rpx;
+  height: 76rpx;
+  line-height: 76rpx;
   border-radius: $uni-border-radius-round;
-  font-size: $uni-font-size-lg;
+  font-size: $uni-font-size-base;
   font-weight: $uni-font-weight-medium;
   color: $uni-text-color-inverse;
   background: $uni-color-primary-gradient;
   box-shadow: $uni-shadow-button;
   transition: all $uni-transition-duration-base;
+  padding: 0 $uni-padding-lg;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .action-btn:active {

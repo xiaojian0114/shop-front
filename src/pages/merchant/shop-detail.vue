@@ -1,20 +1,35 @@
 <!-- pages/merchant/shop-detail.vue -->
 <template>
   <view class="container">
+    <!-- 顶部导航栏 -->
+    <!-- <view class="nav-bar">
+      <view class="nav-back" @tap="goBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <text class="nav-title">店铺详情</text>
+      <view class="nav-placeholder"></view>
+    </view> -->
+
     <!-- 店铺基本信息 -->
     <view class="header">
       <image
-        :src="shopDetail.logo || '/static/default-shop.jpg'"
+        :src="getShopLogo(shopDetail.logo)"
+        :key="shopDetail.logo"
         class="shop-logo"
+        mode="aspectFill"
+        @error="handleImageError"
+        @load="handleImageLoad"
       />
       <view class="shop-info">
         <text class="shop-name">{{ shopDetail.name }}</text>
-        <text
-          class="status"
-          :class="shopDetail.status === 1 ? 'success' : 'pending'"
-        >
-          {{ shopDetail.status === 1 ? "已通过" : "审核中" }}
-        </text>
+        <view class="status-wrapper">
+          <text
+            class="status"
+            :class="getStatusClass(shopDetail.status)"
+          >
+            {{ getStatusText(shopDetail.status) }}
+          </text>
+        </view>
       </view>
     </view>
 
@@ -22,10 +37,10 @@
     <view class="content">
       <view class="info-card">
         <text class="card-title">店铺信息</text>
-        <view class="info-item">
+        <!-- <view class="info-item">
           <text class="label">创建时间</text>
           <text class="value">{{ formatDate(shopDetail.createTime) }}</text>
-        </view>
+        </view> -->
         <view class="info-item">
           <text class="label">店铺状态</text>
           <text class="value">{{
@@ -53,8 +68,9 @@
           :key="product.id"
         >
           <image
-            :src="product.image || '/static/default-product.jpg'"
+            :src="getProductImage(product.image)"
             class="product-image"
+            mode="aspectFill"
           />
           <view class="product-info">
             <text class="product-name">{{ product.name }}</text>
@@ -67,24 +83,19 @@
             </view>
           </view>
           <view class="product-actions">
-            <button
-              size="mini"
-              class="action-btn off-btn"
-              @tap="offProduct(product.id)"
-              v-if="product.isOnSale === 1"
-            >
-              下架
-            </button>
-            <text class="off-text" v-else>已下架</text>
+            <text class="sale-status" :class="product.isOnSale === 1 ? 'on-sale' : 'off-sale'">
+              {{ product.isOnSale === 1 ? "销售中" : "已下架" }}
+            </text>
           </view>
         </view>
       </view>
 
       <!-- 空商品状态 -->
       <view class="empty-product" v-else>
-        <image src="/static/empty-product.png" class="empty-img" />
+        <view class="empty-icon">📦</view>
         <text class="empty-text">暂无商品</text>
-        <button class="add-product-btn" @tap="goToAddProduct">添加商品</button>
+        <text class="empty-tip">前往商品管理页面添加商品</text>
+        <button class="add-product-btn" @tap="goToProductManage">去添加商品</button>
       </view>
     </view>
   </view>
@@ -92,6 +103,7 @@
 
 <script>
 import merchantApi from "@/api/merchant.js";
+import { getShopLogoUrl, getProductImageUrl } from "@/utils/image.js";
 
 export default {
   data() {
@@ -133,28 +145,30 @@ export default {
       }
     },
 
-    async offProduct(productId) {
-      uni.showModal({
-        title: "确认下架",
-        content: "确定要下架这个商品吗？",
-        success: async (res) => {
-          if (res.confirm) {
-            try {
-              await merchantApi.product.offSale(productId);
-              uni.showToast({ title: "下架成功", icon: "success" });
-              this.loadProducts(); // 重新加载商品列表
-            } catch (err) {
-              console.error("下架失败:", err);
-            }
-          }
-        },
-      });
+    goBack() {
+      uni.navigateBack();
     },
 
-    goToAddProduct() {
-      uni.navigateTo({
-        url: "/pages/merchant/add-product",
-      });
+    getStatusText(status) {
+      const statusMap = {
+        0: "审核中",
+        1: "已通过",
+        2: "已拒绝",
+      };
+      return statusMap[status] || "未知状态";
+    },
+
+    getStatusClass(status) {
+      const classMap = {
+        0: "pending",
+        1: "success",
+        2: "rejected",
+      };
+      return classMap[status] || "pending";
+    },
+
+    goToProductManage() {
+      uni.switchTab({ url: "/pages/merchant/index" });
     },
 
     formatDate(dateString) {
@@ -164,76 +178,153 @@ export default {
         .toString()
         .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
     },
+
+    // 获取店铺logo
+    getShopLogo(logo) {
+      const url = getShopLogoUrl(logo);
+      console.log("店铺详情logo - 原始:", logo, "处理后:", url);
+      return url;
+    },
+
+    // 图片加载错误处理
+    handleImageError(e) {
+      console.error("店铺logo加载失败:", e);
+      console.error("失败的URL:", e.target?.src || e.detail?.errMsg);
+    },
+
+    // 图片加载成功处理
+    handleImageLoad(e) {
+      console.log("店铺logo加载成功:", e.target?.src);
+    },
+
+    // 获取商品图片
+    getProductImage(image) {
+      return getProductImageUrl(image);
+    },
   },
 };
 </script>
 
 <style lang="scss" scoped>
 .container {
-  padding: $uni-padding-base;
   background: $uni-bg-color-page;
   min-height: 100vh;
+  padding-bottom: $uni-padding-lg;
+}
+
+/* 导航栏 */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $uni-padding-base $uni-padding-lg;
+  background: $uni-bg-color;
+  border-bottom: 1rpx solid $uni-border-color-light;
+  position: sticky;
+  top: 0;
+  z-index: $uni-z-index-fixed;
+}
+
+.nav-back {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: 48rpx;
+  color: $uni-text-color;
+  font-weight: $uni-font-weight-bold;
+  line-height: 1;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
+}
+
+.nav-placeholder {
+  width: 60rpx;
 }
 
 /* 店铺头部信息 */
 .header {
   background: $uni-bg-color;
-  border-radius: $uni-border-radius-lg;
+  border-radius: 24rpx;
   padding: $uni-padding-lg;
   display: flex;
   align-items: center;
-  margin-bottom: $uni-margin-base;
-  box-shadow: $uni-shadow-sm;
+  margin: $uni-margin-base;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 
 .shop-logo {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: $uni-border-radius-lg;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 20rpx;
   margin-right: $uni-margin-base;
+  background: $uni-bg-color-grey;
+  border: 2rpx solid $uni-border-color-light;
 }
 
 .shop-info {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .shop-name {
-  font-size: $uni-font-size-xl;
-  font-weight: $uni-font-weight-semibold;
+  font-size: 36rpx;
+  font-weight: $uni-font-weight-bold;
   color: $uni-text-color;
-  margin-bottom: 15rpx;
+  margin-bottom: $uni-margin-sm;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-wrapper {
+  display: flex;
+  align-items: center;
 }
 
 .status {
-  font-size: $uni-font-size-sm;
-  padding: $uni-spacing-xs $uni-margin-sm;
-  border-radius: $uni-border-radius-lg;
-  align-self: flex-start;
+  font-size: 24rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
+  font-weight: $uni-font-weight-medium;
 }
 
 .status.success {
-  background: rgba(7, 193, 96, 0.1);
-  color: $uni-color-success;
+  background: rgba(7, 193, 96, 0.15);
+  color: #07c160;
 }
 
 .status.pending {
-  background: rgba(255, 153, 0, 0.1);
-  color: $uni-color-warning;
+  background: rgba(255, 153, 0, 0.15);
+  color: #ff9900;
+}
+
+.status.rejected {
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff4444;
 }
 
 /* 内容区域 */
 .content {
-  padding: 0 $uni-spacing-xs;
+  padding: 0 $uni-margin-base;
   margin-bottom: $uni-margin-base;
 }
 
 .info-card {
   background: $uni-bg-color;
-  border-radius: $uni-border-radius-lg;
-  padding: $uni-padding-base;
-  box-shadow: $uni-shadow-sm;
+  border-radius: 24rpx;
+  padding: $uni-padding-lg;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 
 .card-title {
@@ -270,9 +361,10 @@ export default {
 /* 商品列表区域 */
 .product-section {
   background: $uni-bg-color;
-  border-radius: $uni-border-radius-lg;
-  padding: $uni-padding-base;
-  box-shadow: $uni-shadow-sm;
+  border-radius: 24rpx;
+  padding: $uni-padding-lg;
+  margin: 0 $uni-margin-base;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 
 .section-header {
@@ -378,28 +470,21 @@ export default {
   margin-left: $uni-margin-sm;
 }
 
-.action-btn {
-  padding: $uni-padding-xs $uni-padding-sm;
-  border-radius: $uni-border-radius-base;
-  font-size: $uni-font-size-sm;
-  min-width: 100rpx;
-  transition: all $uni-transition-duration-base;
+.sale-status {
+  font-size: 24rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
+  font-weight: $uni-font-weight-medium;
 }
 
-.off-btn {
-  background: $uni-color-error;
-  color: $uni-text-color-inverse;
+.sale-status.on-sale {
+  background: rgba(7, 193, 96, 0.15);
+  color: #07c160;
 }
 
-.off-btn:active {
-  transform: translateY(2rpx);
-  opacity: 0.9;
-}
-
-.off-text {
-  font-size: $uni-font-size-sm;
-  color: $uni-text-color-placeholder;
-  padding: $uni-padding-xs 0;
+.sale-status.off-sale {
+  background: rgba(158, 158, 158, 0.15);
+  color: #9e9e9e;
 }
 
 /* 空商品状态 */
@@ -408,37 +493,45 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80rpx $uni-padding-lg;
+  padding: 100rpx $uni-padding-lg;
   text-align: center;
 }
 
-.empty-img {
-  width: 200rpx;
-  height: 200rpx;
-  margin-bottom: $uni-margin-base;
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: $uni-margin-lg;
   opacity: 0.6;
 }
 
 .empty-text {
-  font-size: $uni-font-size-base;
+  font-size: 32rpx;
+  font-weight: $uni-font-weight-medium;
+  color: $uni-text-color;
+  margin-bottom: $uni-margin-sm;
+}
+
+.empty-tip {
+  font-size: 26rpx;
   color: $uni-text-color-placeholder;
-  margin-bottom: $uni-padding-lg;
+  margin-bottom: $uni-margin-lg;
+  line-height: 1.5;
 }
 
 .add-product-btn {
-  background: $uni-color-primary;
+  background: linear-gradient(135deg, #ff6b00, #ff8c42);
   color: $uni-text-color-inverse;
-  padding: $uni-margin-sm $uni-padding-lg;
-  border-radius: $uni-border-radius-base;
-  font-size: $uni-font-size-base;
-  min-width: 200rpx;
-  box-shadow: $uni-shadow-button;
-  transition: all $uni-transition-duration-base;
+  padding: $uni-padding-base $uni-padding-lg;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: $uni-font-weight-medium;
+  min-width: 240rpx;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
 .add-product-btn:active {
   transform: translateY(2rpx);
-  box-shadow: $uni-shadow-button-hover;
+  box-shadow: 0 2rpx 8rpx rgba(255, 107, 0, 0.2);
 }
 
 /* 响应式调整 */

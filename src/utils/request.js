@@ -1,6 +1,9 @@
 const BASE_URL = "http://121.4.51.19:8080";
 // const BASE_URL = "http://localhost:8080";
 
+// 导出 BASE_URL 供其他模块使用
+export { BASE_URL };
+
 // 全局请求封装
 const request = (options) => {
   return new Promise((resolve, reject) => {

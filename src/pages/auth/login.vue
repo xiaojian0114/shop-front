@@ -49,10 +49,6 @@
       <button @tap="submit" class="btn" :disabled="loading">
         {{ loading ? "处理中..." : isLogin ? "立即登录" : "注册并登录" }}
       </button>
-
-      <view class="forgot-password" v-if="isLogin">
-        <text>忘记密码？</text>
-      </view>
     </view>
   </view>
 </template>
@@ -361,15 +357,6 @@ export default {
   background: $uni-text-color-disabled;
   box-shadow: none;
   opacity: $uni-opacity-disabled;
-}
-
-/* 忘记密码 */
-.forgot-password {
-  margin-top: $uni-margin-lg;
-}
-.forgot-password text {
-  color: $uni-text-color-placeholder;
-  font-size: $uni-font-size-base;
 }
 
 /* 底部装饰 */

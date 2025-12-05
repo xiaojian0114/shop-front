@@ -4,7 +4,7 @@
       <!-- 商品图片 -->
       <view class="goods-image-section">
         <image
-          :src="product.image || '/static/default-product.jpg'"
+          :src="getProductImage(product.image)"
           class="goods-image"
           mode="aspectFit"
         />
@@ -78,8 +78,9 @@
           <text class="label">商品图片</text>
           <view class="image-preview" @tap="chooseImage">
             <image
-              :src="editForm.image || '/static/default-product.jpg'"
+              :src="getProductImage(editForm.image)"
               class="preview-image"
+              mode="aspectFill"
             />
             <text class="change-tip">点击更换图片</text>
           </view>
@@ -96,6 +97,7 @@
 
 <script>
 import merchantApi from "@/api/merchant.js";
+import { getProductImageUrl } from "@/utils/image.js";
 
 export default {
   data() {
@@ -198,6 +200,11 @@ export default {
       } catch (err) {
         console.error("修改失败:", err);
       }
+    },
+
+    // 获取商品图片
+    getProductImage(image) {
+      return getProductImageUrl(image);
     },
   },
 };

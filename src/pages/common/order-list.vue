@@ -118,6 +118,31 @@ export default {
   onLoad(query) {
     this.currentStatus = Number(query.status || 0);
     this.loadOrders();
+    // 确保tabBar显示（订单列表是用户端页面）
+    this.$nextTick(() => {
+      try {
+        const userInfo = uni.getStorageSync("userInfo");
+        if (!userInfo || userInfo.role !== "merchant") {
+          uni.showTabBar({ animation: false });
+        }
+      } catch (err) {
+        console.error("设置tabBar失败:", err);
+      }
+    });
+  },
+
+  onShow() {
+    // 页面显示时确保tabBar状态正确
+    this.$nextTick(() => {
+      try {
+        const userInfo = uni.getStorageSync("userInfo");
+        if (!userInfo || userInfo.role !== "merchant") {
+          uni.showTabBar({ animation: false });
+        }
+      } catch (err) {
+        console.error("设置tabBar失败:", err);
+      }
+    });
   },
 
   onPullDownRefresh() {
@@ -219,18 +244,37 @@ export default {
         confirmColor: "#07c160",
         success: (res) => {
           if (!res.confirm) return;
-          const orderId = order.orderId || order.id;
+          
+          // 获取订单ID，兼容多种字段名
+          const orderId = order.orderId || order.id || order.order_id;
+          
+          // 调试日志
+          console.log("确认收货 - 订单对象:", order);
+          console.log("确认收货 - 订单ID:", orderId);
+          
+          if (!orderId) {
+            console.error("无法获取订单ID，订单对象:", order);
+            uni.showToast({ title: "订单信息错误", icon: "none" });
+            return;
+          }
+          
           this.confirmingOrderId = orderId;
 
           orderApi
             .confirmReceipt(orderId)
-            .then(() => {
+            .then((response) => {
+              console.log("确认收货成功，响应:", response);
               uni.showToast({ title: "确认收货成功", icon: "success" });
+              // 刷新订单列表，更新订单状态
               this.loadOrders();
             })
             .catch((err) => {
-              console.error("确认收货失败:", err);
-              uni.showToast({ title: "操作失败，请稍后重试", icon: "none" });
+              console.error("确认收货失败，错误详情:", err);
+              console.error("订单ID:", orderId);
+              console.error("订单对象:", order);
+              // 错误信息已由 request.js 统一处理并显示，这里补充更详细的错误提示
+              const errorMsg = err?.msg || err?.message || "操作失败，请稍后重试";
+              uni.showToast({ title: errorMsg, icon: "none", duration: 2000 });
             })
             .finally(() => {
               this.confirmingOrderId = 0;
@@ -346,6 +390,17 @@ export default {
   align-items: center;
   background: $uni-bg-color-grey;
   border-top: 1rpx solid $uni-border-color-light;
+  flex-wrap: wrap;
+  gap: $uni-margin-sm;
+}
+.footer .left {
+  flex: 1;
+  min-width: 0;
+}
+.footer .right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 .total-text {
   font-size: $uni-font-size-base;
@@ -377,11 +432,17 @@ export default {
   padding: $uni-padding-xs $uni-padding-sm;
   border-radius: $uni-border-radius-round;
   background: $uni-bg-color-grey;
+  white-space: nowrap;
+  display: inline-block;
 }
 .receive-action {
   display: flex;
   align-items: center;
-  gap: $uni-spacing-sm;
+  flex-wrap: wrap;
+}
+.receive-action .status-tip {
+  margin-right: $uni-margin-sm;
+  white-space: nowrap;
 }
 .receive-btn {
   min-width: 180rpx;
@@ -394,6 +455,7 @@ export default {
   padding: 0 $uni-padding-lg;
   border: 2rpx solid rgba(7, 193, 96, 0.4);
   transition: all $uni-transition-duration-base;
+  white-space: nowrap;
 }
 .receive-btn:active {
   background: rgba(7, 193, 96, 0.24);

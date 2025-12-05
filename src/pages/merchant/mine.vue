@@ -1,72 +1,111 @@
 <template>
-  <view class="container">
-    <view class="mine">
-      <!-- 用户信息部分 -->
-      <view class="user-info">
-        <image
-          :src="avatarUrl"
-          class="avatar"
-          @error="onAvatarError"
-          mode="aspectFill"
-        />
-        <text class="nickname">{{ userInfo.nickname || "商家" }}（商家）</text>
-        <text class="shop-name" v-if="shopInfo">{{ shopInfo.name }}</text>
-        <text
-          class="shop-status"
-          v-if="shopInfo"
-          :class="getStatusClass(shopInfo.status)"
-        >
-          {{ getStatusText(shopInfo.status) }}
-        </text>
+  <view class="mine">
+    <!-- 顶部背景 -->
+    <view class="header">
+      <view class="bg-shape"></view>
+      <view class="user-card">
+        <view class="avatar-wrapper" @tap="changeAvatar">
+          <image
+            :src="avatarUrl"
+            :key="avatarUrl"
+            class="avatar"
+            mode="aspectFill"
+            @error="handleAvatarError"
+            @load="handleAvatarLoad"
+          ></image>
+          <view class="avatar-edit">
+            <text class="icon">✎</text>
+          </view>
+        </view>
+        <view class="info">
+          <text class="nickname">{{ userInfo.nickname || "商家" }}</text>
+          <text class="phone">{{ userInfo.phone || "点击登录" }}</text>
+          <text class="shop-name" v-if="shopInfo">{{ shopInfo.name }}</text>
+          <text
+            class="shop-status"
+            v-if="shopInfo"
+            :class="getStatusClass(shopInfo.status)"
+          >
+            {{ getStatusText(shopInfo.status) }}
+          </text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 统计信息卡片 -->
+    <view class="stats-box" v-if="orderStats">
+      <view class="box-title">
+        <text class="title">数据统计</text>
+      </view>
+      
+      <!-- 统计数据卡片 -->
+      <view class="stats-grid">
+        <view class="stat-card primary">
+          <view class="stat-icon">📦</view>
+          <view class="stat-content">
+            <text class="stat-number">{{ orderStats.pendingDelivery || 0 }}</text>
+            <text class="stat-label">待发货</text>
+          </view>
+        </view>
+        
+        <view class="stat-card success">
+          <view class="stat-icon">📊</view>
+          <view class="stat-content">
+            <text class="stat-number">{{ orderStats.todayOrders || 0 }}</text>
+            <text class="stat-label">今日订单</text>
+          </view>
+        </view>
+        
+        <view class="stat-card warning">
+          <view class="stat-icon">🛍️</view>
+          <view class="stat-content">
+            <text class="stat-number">{{ orderStats.totalProducts || 0 }}</text>
+            <text class="stat-label">商品总数</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 菜单列表 -->
+    <view class="menu-list">
+      <view class="menu-group">
+        <view class="menu-item" @tap="goToOrderManage">
+          <view class="item-left">
+            <view class="item-icon order">📋</view>
+            <text class="label">订单管理</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+        <view class="menu-item" @tap="goTo('/pages/merchant/shop')">
+          <view class="item-left">
+            <view class="item-icon shop">🏪</view>
+            <text class="label">店铺管理</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+        <view class="menu-item" @tap="goTo('/pages/merchant/index')">
+          <view class="item-left">
+            <view class="item-icon goods">📦</view>
+            <text class="label">商品管理</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
       </view>
 
-      <!-- 统计信息卡片 -->
-      <view class="stats-cards" v-if="orderStats">
-        <view class="stat-card">
-          <text class="stat-number">{{ orderStats.pendingDelivery || 0 }}</text>
-          <text class="stat-label">待发货</text>
-        </view>
-        <view class="stat-card">
-          <text class="stat-number">{{ orderStats.todayOrders || 0 }}</text>
-          <text class="stat-label">今日订单</text>
-        </view>
-        <view class="stat-card">
-          <text class="stat-number">{{ orderStats.totalProducts || 0 }}</text>
-          <text class="stat-label">商品总数</text>
+      <view class="menu-group logout-group">
+        <view class="menu-item logout" @tap="logout">
+          <view class="item-left">
+            <view class="item-icon logout">🚪</view>
+            <text class="label">退出登录</text>
+          </view>
+          <text class="arrow">›</text>
         </view>
       </view>
+    </view>
 
-      <!-- 功能菜单 -->
-      <view class="menu">
-        <view class="item" @tap="goToOrderManage">
-          <view class="item-left">
-            <image src="/static/icon/order.png" class="item-icon" />
-            <text>订单管理</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-        <view class="item" @tap="goTo('/pages/merchant/shop')">
-          <view class="item-left">
-            <image src="/static/icon/shop.png" class="item-icon" />
-            <text>店铺管理</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-        <view class="item" @tap="goTo('/pages/merchant/index')">
-          <view class="item-left">
-            <image src="/static/icon/goods.png" class="item-icon" />
-            <text>商品管理</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-        <view class="item" @tap="logout">
-          <view class="item-left">
-            <image src="/static/icon/logout.png" class="item-icon" />
-            <text>退出登录</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-      </view>
+    <!-- 加载状态 -->
+    <view class="loading-mask" v-if="loading">
+      <view class="loading-spinner"></view>
     </view>
 
     <!-- 商家底栏 -->
@@ -110,6 +149,7 @@ export default {
       orderStats: null,
       currentPath: "",
       isMerchant: false,
+      avatarUrl: "/static/default-avatar.png",
       avatarLoadError: false,
       loading: false,
     };
@@ -156,6 +196,9 @@ export default {
           uni.setStorageSync("userInfo", this.userInfo);
         }
 
+        // 更新头像URL
+        this.updateAvatarUrl();
+
         console.log("商家信息:", data);
       } catch (error) {
         console.error("加载商家信息失败:", error);
@@ -163,6 +206,53 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+
+    // 更新头像URL
+    updateAvatarUrl() {
+      this.avatarLoadError = false;
+
+      if (!this.userInfo || !this.userInfo.avatar) {
+        console.log("无头像信息，使用默认头像");
+        this.avatarUrl = "/static/default-avatar.png";
+        return;
+      }
+
+      const avatar = this.userInfo.avatar;
+      console.log("原始头像路径:", avatar);
+
+      if (!avatar || typeof avatar !== "string" || avatar.trim() === "") {
+        console.log("头像路径为空，使用默认头像");
+        this.avatarUrl = "/static/default-avatar.png";
+        return;
+      }
+
+      const trimmedAvatar = avatar.trim();
+
+      // 完整的 HTTP/HTTPS URL
+      if (trimmedAvatar.startsWith("http://") || trimmedAvatar.startsWith("https://")) {
+        console.log("使用完整URL:", trimmedAvatar);
+        this.avatarUrl = trimmedAvatar;
+        return;
+      }
+
+      // OSS URL
+      if (trimmedAvatar.includes("oss-cn") || trimmedAvatar.includes("aliyuncs.com")) {
+        let ossUrl = trimmedAvatar;
+        if (!trimmedAvatar.startsWith("http://") && !trimmedAvatar.startsWith("https://")) {
+          ossUrl = trimmedAvatar.startsWith("//") ? "https:" + trimmedAvatar : "https://" + trimmedAvatar;
+        }
+        console.log("使用OSS URL:", ossUrl);
+        this.avatarUrl = ossUrl;
+        return;
+      }
+
+      // 相对路径
+      const BASE_URL = "http://121.4.51.19:8080";
+      const path = trimmedAvatar.startsWith("/") ? trimmedAvatar : "/" + trimmedAvatar;
+      const fullUrl = BASE_URL + path;
+      console.log("拼接后的头像URL:", fullUrl);
+      this.avatarUrl = fullUrl;
     },
 
     // 加载订单统计
@@ -196,7 +286,31 @@ export default {
 
     onAvatarError(e) {
       console.error("头像加载失败:", e);
-      this.avatarLoadError = true;
+      console.error("失败的头像URL:", this.avatarUrl);
+      console.error("用户信息:", this.userInfo);
+      console.error("原始头像字段值:", this.userInfo?.avatar);
+
+      if (this.avatarUrl && this.avatarUrl.includes("aliyuncs.com")) {
+        console.error("OSS头像加载失败，可能原因：");
+        console.error("1. 小程序域名白名单未配置");
+        console.error("2. OSS跨域设置问题");
+        console.error("3. 图片URL无效");
+      }
+
+      if (!this.avatarUrl.includes("default-avatar")) {
+        console.log("切换到默认头像");
+        this.avatarLoadError = true;
+        this.avatarUrl = "/static/default-avatar.png";
+      }
+    },
+
+    handleAvatarLoad() {
+      console.log("头像加载成功:", this.avatarUrl);
+      this.avatarLoadError = false;
+    },
+
+    changeAvatar() {
+      uni.showToast({ title: "头像编辑功能开发中", icon: "none" });
     },
 
     getStatusText(status) {
@@ -221,183 +335,353 @@ export default {
       uni.navigateTo({ url: "/pages/merchant/order-manage" });
     },
   },
-
-  computed: {
-    avatarUrl() {
-      // 如果加载失败或者没有头像，使用默认头像
-      if (this.avatarLoadError || !this.userInfo.avatar) {
-        return "/static/avatar.png";
-      }
-
-      let avatarUrl = this.userInfo.avatar;
-
-      // 确保URL格式正确
-      if (avatarUrl && !avatarUrl.startsWith("http")) {
-        if (avatarUrl.startsWith("//")) {
-          avatarUrl = "https:" + avatarUrl;
-        } else {
-          avatarUrl = "https://" + avatarUrl;
-        }
-      }
-
-      // 添加时间戳避免缓存
-      if (avatarUrl && avatarUrl.startsWith("http")) {
-        const separator = avatarUrl.includes("?") ? "&" : "?";
-        avatarUrl += separator + "t=" + Date.now();
-      }
-
-      return avatarUrl;
-    },
-  },
 };
 </script>
 
 <style lang="scss" scoped>
-.container {
-  padding-bottom: 140rpx;
-  background: $uni-bg-color-page;
-  min-height: 100vh;
-}
-
 .mine {
-  background: $uni-bg-color;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
   min-height: 100vh;
+  padding-bottom: 140rpx;
 }
 
-/* 用户信息区域 */
-.user-info {
-  padding: 80rpx 0 $uni-padding-xl;
-  text-align: center;
-  background: $uni-color-primary-gradient;
-  color: $uni-text-color-inverse;
+/* 顶部区域 - 统一渐变背景 */
+.header {
+  height: 360rpx;
+  background: linear-gradient(135deg, #ff6b00 0%, #ff8c42 50%, #ffa366 100%);
   position: relative;
+  overflow: hidden;
 }
 
-.avatar {
-  width: 180rpx;
-  height: 180rpx;
-  border-radius: 90rpx;
-  border: 6rpx solid rgba(255, 255, 255, 0.8);
-  margin-bottom: $uni-margin-sm;
-  background: $uni-bg-color;
+.bg-shape {
+  position: absolute;
+  top: -100rpx;
+  right: -100rpx;
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.nickname {
-  font-size: $uni-font-size-h2;
-  font-weight: $uni-font-weight-bold;
-  display: block;
-  margin-bottom: $uni-spacing-xs;
+.bg-shape::before {
+  content: "";
+  position: absolute;
+  top: 150rpx;
+  left: -80rpx;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.shop-name {
-  font-size: $uni-font-size-lg;
-  opacity: 0.9;
-  display: block;
-  margin-bottom: 15rpx;
-}
-
-.shop-status {
-  font-size: $uni-font-size-sm;
-  padding: $uni-spacing-xs $uni-padding-sm;
-  border-radius: $uni-border-radius-lg;
-  background: rgba(255, 255, 255, 0.2);
-  display: inline-block;
-}
-
-.status-success {
-  background: rgba(7, 193, 96, 0.2);
-  color: $uni-color-success;
-}
-
-.status-pending {
-  background: rgba(255, 153, 0, 0.2);
-  color: $uni-color-warning;
-}
-
-.status-rejected {
-  background: rgba(255, 68, 68, 0.2);
-  color: $uni-color-error;
-}
-
-/* 统计卡片 */
-.stats-cards {
+.user-card {
   display: flex;
-  padding: $uni-padding-base;
-  gap: $uni-margin-sm;
-  background: transparent;
-  margin: -40rpx $uni-margin-base $uni-margin-base;
-  border-radius: $uni-border-radius-lg;
-  box-shadow: $uni-shadow-card;
+  align-items: center;
+  padding: 80rpx $uni-padding-lg 40rpx;
   position: relative;
   z-index: $uni-z-index-base;
 }
 
-.stat-card {
-  flex: 1;
-  text-align: center;
-  padding: $uni-padding-base $uni-padding-sm;
-  background: $uni-bg-color-grey;
-  border-radius: $uni-border-radius-base;
-  border: 2rpx solid $uni-border-color-light;
+.avatar-wrapper {
+  position: relative;
+  margin-right: $uni-margin-lg;
 }
 
-.stat-number {
-  font-size: $uni-font-size-xl;
-  font-weight: $uni-font-weight-bold;
-  color: $uni-text-color;
-  display: block;
-  margin-bottom: $uni-spacing-xs;
-}
-
-.stat-label {
-  font-size: $uni-font-size-sm;
-  color: $uni-text-color-secondary;
-}
-
-/* 菜单区域 */
-.menu {
-  margin: 0 $uni-margin-base;
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
   background: $uni-bg-color;
-  border-radius: $uni-border-radius-xl;
-  overflow: hidden;
-  box-shadow: $uni-shadow-card;
 }
 
-.item {
+.avatar-edit {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40rpx;
+  height: 40rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid rgba(255, 107, 0, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.avatar-edit .icon {
+  font-size: 18rpx;
+  color: $uni-color-primary;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.nickname {
+  font-size: 36rpx;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color-inverse;
+  margin-bottom: 8rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+}
+
+.phone {
+  font-size: $uni-font-size-base;
+  color: rgba(255, 255, 255, 0.95);
+  opacity: 0.95;
+  margin-bottom: 8rpx;
+}
+
+.shop-name {
+  font-size: $uni-font-size-sm;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 8rpx;
+}
+
+.shop-status {
+  font-size: $uni-font-size-xs;
+  padding: 4rpx 12rpx;
+  border-radius: $uni-border-radius-lg;
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 4rpx;
+}
+
+.status-success {
+  background: rgba(7, 193, 96, 0.25);
+  color: #07c160;
+  border: 1rpx solid rgba(7, 193, 96, 0.3);
+}
+
+.status-pending {
+  background: rgba(255, 153, 0, 0.25);
+  color: #ff9900;
+  border: 1rpx solid rgba(255, 153, 0, 0.3);
+}
+
+.status-rejected {
+  background: rgba(255, 68, 68, 0.25);
+  color: #ff4444;
+  border: 1rpx solid rgba(255, 68, 68, 0.3);
+}
+
+/* 统计信息卡片 - 统一卡片样式 */
+.stats-box {
+  background: $uni-bg-color;
+  margin: -50rpx $uni-margin-base $uni-margin-lg;
+  border-radius: 24rpx;
+  padding: $uni-padding-lg;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: $uni-z-index-base;
+}
+
+.box-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 36rpx $uni-padding-lg;
+  margin-bottom: $uni-margin-lg;
+  padding-bottom: $uni-padding-base;
+  border-bottom: 2rpx solid $uni-border-color-light;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
+}
+
+/* 统计卡片网格 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $uni-margin-base;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $uni-padding-lg $uni-padding-base;
+  border-radius: 16rpx;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf0 100%);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.stat-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.primary {
+  background: linear-gradient(135deg, rgba(255, 107, 0, 0.1) 0%, rgba(255, 140, 66, 0.05) 100%);
+}
+
+.stat-card.success {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.1) 0%, rgba(78, 205, 196, 0.05) 100%);
+}
+
+.stat-card.warning {
+  background: linear-gradient(135deg, rgba(255, 167, 38, 0.1) 0%, rgba(255, 183, 77, 0.05) 100%);
+}
+
+.stat-icon {
+  font-size: 48rpx;
+  margin-bottom: $uni-margin-sm;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 36rpx;
+  font-weight: $uni-font-weight-bold;
+  color: $uni-text-color;
+  line-height: 1.2;
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: $uni-text-color-secondary;
+  text-align: center;
+}
+
+/* 菜单列表 - 统一卡片样式 */
+.menu-list {
+  padding: 0 $uni-padding-base;
+}
+
+.menu-group {
+  background: $uni-bg-color;
+  border-radius: 24rpx;
+  margin-bottom: $uni-margin-base;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.menu-item {
+  height: 108rpx;
+  padding: 0 $uni-padding-lg;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   border-bottom: 1rpx solid $uni-border-color-light;
-  font-size: $uni-font-size-lg;
-  transition: background-color $uni-transition-duration-base;
+  transition: all 0.2s ease;
+  background: $uni-bg-color;
 }
 
-.item:active {
-  background: $uni-bg-color-hover;
+.menu-item:active {
+  background: $uni-bg-color-grey;
 }
 
-.item:last-child {
+.menu-item:last-child {
   border-bottom: none;
 }
 
 .item-left {
   display: flex;
   align-items: center;
-  gap: $uni-margin-sm;
+  flex: 1;
 }
 
 .item-icon {
-  width: 40rpx;
-  height: 40rpx;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $uni-margin-base;
+  font-size: 28rpx;
+  flex-shrink: 0;
+}
+
+.item-icon.order {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.08) 100%);
+  color: #2196f3;
+}
+
+.item-icon.shop {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.15) 0%, rgba(156, 39, 176, 0.08) 100%);
+  color: #9c27b0;
+}
+
+.item-icon.goods {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15) 0%, rgba(255, 152, 0, 0.08) 100%);
+  color: #ff9800;
+}
+
+.item-icon.logout {
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.08) 100%);
+  color: #f44336;
+}
+
+.label {
+  font-size: 30rpx;
+  color: $uni-text-color;
+  font-weight: $uni-font-weight-medium;
+}
+
+.logout .label {
+  color: #f44336;
 }
 
 .arrow {
+  font-size: 32rpx;
   color: $uni-border-color;
-  font-size: $uni-font-size-base;
+  margin-left: $uni-margin-sm;
 }
 
-/* 底栏样式 */
+.logout-group {
+  margin-bottom: 0;
+  margin-top: $uni-margin-base;
+}
+
+/* 加载状态 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: $uni-z-index-modal;
+  backdrop-filter: blur(4rpx);
+}
+
+.loading-spinner {
+  width: 80rpx;
+  height: 80rpx;
+  border: 6rpx solid rgba(255, 107, 0, 0.1);
+  border-top: 6rpx solid $uni-color-primary;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 商家底栏 */
 .merchant-tabbar {
   position: fixed;
   left: 0;
@@ -435,26 +719,27 @@ export default {
 
 /* 响应式调整 */
 @media (max-width: 750rpx) {
-  .user-info {
-    padding: $uni-padding-xl 0 $uni-padding-lg;
+  .user-card {
+    padding: 60rpx $uni-padding-base 30rpx;
   }
 
   .avatar {
-    width: 160rpx;
-    height: 160rpx;
+    width: 100rpx;
+    height: 100rpx;
   }
 
-  .stats-cards {
-    margin: -30rpx $uni-margin-sm $uni-margin-sm;
-    padding: 25rpx;
-  }
-
-  .menu {
-    margin: 0 $uni-margin-sm;
-  }
-
-  .item {
+  .stats-box {
+    margin: -40rpx $uni-margin-sm $uni-margin-base;
     padding: $uni-padding-base;
+  }
+
+  .menu-list {
+    padding: 0 $uni-margin-sm;
+  }
+
+  .menu-item {
+    padding: 0 $uni-padding-base;
+    height: 96rpx;
   }
 }
 </style>

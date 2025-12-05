@@ -2,17 +2,45 @@
 export default {
   onLaunch() {
     console.log("启动");
+    // 初始化时设置tabBar显示状态
+    this.updateTabBar();
   },
   onShow() {
-    setTimeout(() => {
-      const userInfo = uni.getStorageSync("userInfo");
-      if (userInfo && userInfo.role === "merchant") {
-        uni.hideTabBar();
-      } else {
-        uni.showTabBar();
-      }
-    }, 300);
+    // 每次显示时更新tabBar状态
+    this.updateTabBar();
   },
+  methods: {
+    updateTabBar() {
+      try {
+      const userInfo = uni.getStorageSync("userInfo");
+        const pages = getCurrentPages();
+        const currentPage = pages[pages.length - 1];
+        const currentRoute = currentPage?.route || "";
+        
+        // 判断当前页面是否是tabBar页面
+        const tabBarPages = [
+          "pages/user/index",
+          "pages/user/cart",
+          "pages/user/mine"
+        ];
+        const isTabBarPage = tabBarPages.some(page => currentRoute.includes(page));
+        
+        // 如果是商家角色，隐藏tabBar
+      if (userInfo && userInfo.role === "merchant") {
+          if (isTabBarPage) {
+            uni.hideTabBar({ animation: false });
+          }
+      } else {
+          // 普通用户，如果是tabBar页面则显示
+          if (isTabBarPage) {
+            uni.showTabBar({ animation: false });
+      }
+        }
+      } catch (err) {
+        console.error("更新tabBar状态失败:", err);
+      }
+    }
+  }
 };
 </script>
 

@@ -4,52 +4,64 @@
       <button class="apply-btn" @tap="applyShop">+ 申请新店铺</button>
     </view>
 
+    <!-- 店铺列表 -->
     <view class="shop-list" v-if="shops && shops.length > 0">
-      <view class="section-title">我的店铺 ({{ shops.length }})</view>
+      <view class="section-title">
+        <text class="title-text">我的店铺</text>
+        <text class="title-count">({{ shops.length }})</text>
+      </view>
       <view class="shop-cards">
-        <view class="shop-card" v-for="item in shops" :key="item.id">
+        <view 
+          class="shop-card" 
+          v-for="item in shops" 
+          :key="item.id"
+          @tap="viewShop(item)"
+        >
           <view class="card-header">
             <image
-              :src="item.logo || '/static/default-shop.jpg'"
+              :src="getShopLogo(item.logo)"
+              :key="item.logo"
               class="logo"
+              mode="aspectFill"
+              @error="handleImageError"
+              @load="handleImageLoad"
             />
             <view class="shop-info">
               <text class="name">{{ item.name }}</text>
+              <view class="status-wrapper">
               <text
                 class="status"
-                :class="item.status === 1 ? 'success' : 'pending'"
+                  :class="getStatusClass(item.status)"
               >
-                {{ item.status === 1 ? "已通过" : "审核中" }}
+                  {{ getStatusText(item.status) }}
+                </text>
+                <text class="create-time" v-if="item.createTime">
+                  {{ formatDate(item.createTime) }}
               </text>
+              </view>
             </view>
           </view>
-          <view class="card-actions">
+          <view class="card-actions" @tap.stop>
             <button
               size="mini"
               type="primary"
               v-if="item.status === 1"
               @tap="editShop(item)"
-              class="action-btn"
+              class="action-btn edit-btn"
             >
-              编辑
+              编辑店铺
             </button>
-            <button
-              size="mini"
-              v-if="item.status === 1"
-              @tap="viewShop(item)"
-              class="action-btn secondary"
-            >
-              查看
-            </button>
+            <text class="status-tip" v-else>审核通过后可编辑</text>
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 还没有店铺时的友好提示 -->
+    <!-- 空状态 -->
     <view class="empty" v-if="!shops || shops.length === 0">
-      <image src="/static/empty-shop.png" class="empty-img" />
-      <text class="empty-text">你还没有店铺，快去申请一个吧~</text>
+      <view class="empty-icon">🏪</view>
+      <text class="empty-text">暂无店铺</text>
+      <text class="empty-tip">点击下方按钮申请新店铺</text>
     </view>
 
     <!-- 编辑弹窗 -->
@@ -69,8 +81,9 @@
           <text class="label">店铺头像</text>
           <view class="logo-preview" @tap="chooseLogo">
             <image
-              :src="editForm.logo || '/static/default-shop.jpg'"
+              :src="getShopLogo(editForm.logo)"
               class="preview-img"
+              mode="aspectFill"
             />
             <text class="change-tip">点击更换</text>
           </view>
@@ -114,6 +127,7 @@
 
 <script>
 import merchantApi from "@/api/merchant.js";
+import { getShopLogoUrl } from "@/utils/image.js";
 
 export default {
   data() {
@@ -179,6 +193,38 @@ export default {
     viewShop(shop) {
       uni.navigateTo({ url: `/pages/merchant/shop-detail?id=${shop.id}` });
     },
+
+    getStatusText(status) {
+      const statusMap = {
+        0: "审核中",
+        1: "已通过",
+        2: "已拒绝",
+      };
+      return statusMap[status] || "未知状态";
+    },
+
+    getStatusClass(status) {
+      const classMap = {
+        0: "pending",
+        1: "success",
+        2: "rejected",
+      };
+      return classMap[status] || "pending";
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      const now = new Date();
+      const diff = now - date;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      
+      if (days === 0) return "今天";
+      if (days === 1) return "昨天";
+      if (days < 7) return `${days}天前`;
+      
+      return `${date.getMonth() + 1}-${date.getDate()}`;
+    },
     async chooseLogo() {
       uni.chooseImage({
         count: 1,
@@ -221,6 +267,46 @@ export default {
       } catch (err) {
         console.error("编辑失败:", err);
       }
+    },
+
+    // 获取店铺logo
+    getShopLogo(logo) {
+      const url = getShopLogoUrl(logo);
+      console.log("店铺logo - 原始:", logo);
+      console.log("店铺logo - 处理后:", url);
+      
+      // 检查URL格式
+      if (url.includes("aliyuncs.com")) {
+        console.log("店铺logo - OSS URL格式:", url);
+        // 检查路径是否正确
+        if (url.includes("/shop/")) {
+          console.log("店铺logo - 路径包含 /shop/");
+        } else if (url.includes("/images/")) {
+          console.log("店铺logo - 路径包含 /images/");
+        } else {
+          console.warn("店铺logo - 路径格式未知:", url);
+        }
+      }
+      
+      return url;
+    },
+
+    // 图片加载错误处理
+    handleImageError(e) {
+      console.error("店铺logo加载失败:", e);
+      const failedUrl = e.target?.src || e.detail?.errMsg || "未知URL";
+      console.error("失败的URL:", failedUrl);
+      
+      // 尝试检查是否是路径问题
+      if (failedUrl.includes("/shop/")) {
+        console.warn("提示: 图片路径是 /shop/，如果404可能是图片不存在或路径错误");
+        console.warn("建议: 检查商家头像的URL格式，看看是否使用 /images/ 路径");
+      }
+    },
+
+    // 图片加载成功处理
+    handleImageLoad(e) {
+      console.log("店铺logo加载成功:", e.target?.src);
     },
   },
 };
@@ -265,12 +351,23 @@ export default {
 }
 
 .section-title {
-  font-size: $uni-font-size-xl;
-  font-weight: $uni-font-weight-semibold;
+  display: flex;
+  align-items: baseline;
+  margin-bottom: $uni-margin-lg;
+  padding-bottom: $uni-padding-base;
+  border-bottom: 2rpx solid $uni-border-color-light;
+}
+
+.title-text {
+  font-size: 32rpx;
+  font-weight: $uni-font-weight-bold;
   color: $uni-text-color;
-  margin-bottom: $uni-margin-base;
-  padding-left: $uni-spacing-xs;
-  border-left: 8rpx solid $uni-color-primary;
+}
+
+.title-count {
+  font-size: 24rpx;
+  color: $uni-text-color-placeholder;
+  margin-left: 8rpx;
 }
 
 .shop-cards {
@@ -281,88 +378,117 @@ export default {
 
 .shop-card {
   background: $uni-bg-color;
-  border-radius: $uni-border-radius-lg;
-  padding: $uni-padding-base;
-  box-shadow: $uni-shadow-sm;
+  border-radius: 24rpx;
+  padding: $uni-padding-lg;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 25rpx;
-  transition: all $uni-transition-duration-base;
+  gap: $uni-margin-base;
+  transition: all 0.3s ease;
 }
 
 .shop-card:active {
-  transform: translateY(4rpx);
-  box-shadow: $uni-shadow-card-hover;
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  gap: 25rpx;
+  gap: $uni-margin-base;
 }
 
 .logo {
   width: 120rpx;
   height: 120rpx;
-  border-radius: $uni-border-radius-base;
-  object-fit: cover;
+  border-radius: 16rpx;
   flex-shrink: 0;
+  background: $uni-bg-color-grey;
+  border: 2rpx solid $uni-border-color-light;
 }
 
 .shop-info {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 
 .name {
-  font-size: $uni-font-size-xl;
-  font-weight: $uni-font-weight-semibold;
+  font-size: 32rpx;
+  font-weight: $uni-font-weight-bold;
   color: $uni-text-color;
-  margin-bottom: $uni-spacing-xs;
+  margin-bottom: $uni-margin-sm;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: $uni-margin-sm;
+  flex-wrap: wrap;
 }
 
 .status {
-  font-size: $uni-font-size-sm;
-  padding: 6rpx $uni-padding-sm;
-  border-radius: $uni-border-radius-lg;
-  align-self: flex-start;
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-weight: $uni-font-weight-medium;
 }
 
 .status.success {
-  background: rgba(7, 193, 96, 0.1);
-  color: $uni-color-success;
+  background: rgba(7, 193, 96, 0.15);
+  color: #07c160;
 }
 
 .status.pending {
-  background: rgba(255, 153, 0, 0.1);
-  color: $uni-color-warning;
+  background: rgba(255, 153, 0, 0.15);
+  color: #ff9900;
+}
+
+.status.rejected {
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff4444;
+}
+
+.create-time {
+  font-size: 22rpx;
+  color: $uni-text-color-placeholder;
 }
 
 .card-actions {
   display: flex;
   justify-content: flex-end;
-  gap: $uni-margin-sm;
+  align-items: center;
+  padding-top: $uni-padding-base;
+  border-top: 1rpx solid $uni-border-color-light;
 }
 
 .action-btn {
-  padding: 14rpx $uni-padding-base;
-  border-radius: $uni-border-radius-base;
-  font-size: $uni-font-size-sm;
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  font-size: 26rpx;
   font-weight: $uni-font-weight-medium;
-  min-width: 120rpx;
-  transition: all $uni-transition-duration-base;
+  min-width: 140rpx;
+  transition: all 0.3s ease;
 }
 
-.action-btn.secondary {
-  background: $uni-bg-color-grey;
-  color: $uni-text-color-secondary;
-  border: 1rpx solid $uni-border-color-light;
+.action-btn.edit-btn {
+  background: linear-gradient(135deg, #ff6b00, #ff8c42);
+  color: $uni-text-color-inverse;
+  box-shadow: 0 2rpx 8rpx rgba(255, 107, 0, 0.3);
 }
 
-.action-btn:active {
+.action-btn.edit-btn:active {
   transform: translateY(2rpx);
-  opacity: 0.9;
+  box-shadow: 0 1rpx 4rpx rgba(255, 107, 0, 0.2);
+}
+
+.status-tip {
+  font-size: 24rpx;
+  color: $uni-text-color-placeholder;
 }
 
 /* 空状态 */
@@ -371,19 +497,25 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120rpx $uni-padding-lg;
+  padding: 150rpx $uni-padding-lg;
   text-align: center;
 }
 
-.empty-img {
-  width: 240rpx;
-  height: 240rpx;
-  margin-bottom: $uni-padding-lg;
-  opacity: 0.7;
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: $uni-margin-lg;
+  opacity: 0.6;
 }
 
 .empty-text {
-  font-size: $uni-font-size-lg;
+  font-size: 32rpx;
+  font-weight: $uni-font-weight-medium;
+  color: $uni-text-color;
+  margin-bottom: $uni-margin-sm;
+}
+
+.empty-tip {
+  font-size: 26rpx;
   color: $uni-text-color-placeholder;
   line-height: 1.5;
 }

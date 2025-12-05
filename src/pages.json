@@ -1,4 +1,11 @@
 {
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "商城",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f8f8f8",
+    "navigationStyle": "default"
+  },
   "pages": [
     {
       "path": "pages/auth/login",

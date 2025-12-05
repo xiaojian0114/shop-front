@@ -7,9 +7,11 @@
         <view class="avatar-wrapper" @tap="changeAvatar">
           <image
             :src="avatarUrl"
+            :key="avatarUrl"
             class="avatar"
             mode="aspectFill"
-            @error="avatarError = true"
+            @error="handleAvatarError"
+            @load="handleAvatarLoad"
           ></image>
           <view class="avatar-edit">
             <text class="icon">✎</text>
@@ -82,27 +84,6 @@
           </view>
           <text class="arrow">›</text>
         </view>
-        <view class="menu-item" @tap="soon">
-          <view class="item-left">
-            <view class="item-icon address">📍</view>
-            <text class="label">收货地址</text>
-          </view>
-          <text class="arrow">›</text>
-        </view>
-        <view class="menu-item" @tap="soon">
-          <view class="item-left">
-            <view class="item-icon favorite">❤️</view>
-            <text class="label">我的收藏</text>
-          </view>
-          <text class="arrow">›</text>
-        </view>
-        <view class="menu-item" @tap="soon">
-          <view class="item-left">
-            <view class="item-icon service">💬</view>
-            <text class="label">联系客服</text>
-          </view>
-          <text class="arrow">›</text>
-        </view>
       </view>
 
       <view class="menu-group logout-group">
@@ -136,24 +117,10 @@ export default {
         waitReceive: 0,
         finished: 0,
       },
+      avatarUrl: "/static/default-avatar.png", // 默认头像
       avatarError: false,
       loading: false,
     };
-  },
-
-  computed: {
-    avatarUrl() {
-      console.log("avatarError:", this.avatarError);
-      if (this.avatarError) return "/static/default-avatar.png";
-      console.log("this.userInfo:", this.userInfo);
-
-      if (this.userInfo.avatar) {
-        return this.userInfo.avatar.startsWith("http")
-          ? this.userInfo.avatar
-          : "http://localhost:8080" + this.userInfo.avatar;
-      }
-      return "/static/default-avatar.png";
-    },
   },
 
   onShow() {
@@ -172,7 +139,12 @@ export default {
     /** 获取个人信息 */
     async loadUserInfo(cb) {
       const token = uni.getStorageSync("token");
-      if (!token) return;
+      if (!token) {
+        // 没有token，重置头像
+        this.avatarUrl = "/static/default-avatar.png";
+        this.avatarError = false;
+        return;
+      }
 
       this.loading = true;
       try {
@@ -180,12 +152,72 @@ export default {
         this.userInfo = userInfo || {};
         uni.setStorageSync("userInfo", this.userInfo);
         console.log("用户信息：", this.userInfo);
+        
+        // 更新头像URL
+        this.updateAvatarUrl();
       } catch (error) {
         console.warn("获取用户信息失败：", error);
+        this.avatarUrl = "/static/default-avatar.png";
+        this.avatarError = false;
       } finally {
         this.loading = false;
         cb?.();
       }
+    },
+
+    /** 更新头像URL */
+    updateAvatarUrl() {
+      // 重置错误状态
+      this.avatarError = false;
+      
+      // 如果没有用户信息或头像，使用默认头像
+      if (!this.userInfo || !this.userInfo.avatar) {
+        console.log("无头像信息，使用默认头像");
+        this.avatarUrl = "/static/default-avatar.png";
+        return;
+      }
+
+      const avatar = this.userInfo.avatar;
+      console.log("原始头像路径:", avatar);
+      
+      // 处理空字符串
+      if (!avatar || typeof avatar !== "string" || avatar.trim() === "") {
+        console.log("头像路径为空，使用默认头像");
+        this.avatarUrl = "/static/default-avatar.png";
+        return;
+      }
+
+      // 去除首尾空格
+      const trimmedAvatar = avatar.trim();
+      
+      // 如果已经是完整的URL（http/https开头），直接使用
+      if (trimmedAvatar.startsWith("http://") || trimmedAvatar.startsWith("https://")) {
+        console.log("使用完整URL:", trimmedAvatar);
+        this.avatarUrl = trimmedAvatar;
+        return;
+      }
+
+      // 如果是OSS URL（包含oss-cn或aliyuncs），即使没有http前缀也处理
+      if (trimmedAvatar.includes("oss-cn") || trimmedAvatar.includes("aliyuncs.com")) {
+        // 如果没有协议前缀，添加https://
+        let ossUrl = trimmedAvatar;
+        if (!trimmedAvatar.startsWith("http://") && !trimmedAvatar.startsWith("https://")) {
+          ossUrl = trimmedAvatar.startsWith("//") ? "https:" + trimmedAvatar : "https://" + trimmedAvatar;
+        }
+        console.log("使用OSS URL:", ossUrl);
+        this.avatarUrl = ossUrl;
+        return;
+      }
+
+      // 如果是相对路径，拼接BASE_URL
+      const BASE_URL = "http://121.4.51.19:8080";
+      // const BASE_URL = "http://localhost:8080";
+      
+      // 确保路径以/开头
+      const path = trimmedAvatar.startsWith("/") ? trimmedAvatar : "/" + trimmedAvatar;
+      const fullUrl = BASE_URL + path;
+      console.log("拼接后的头像URL:", fullUrl);
+      this.avatarUrl = fullUrl;
     },
 
     /** 加载订单统计 */
@@ -246,100 +278,144 @@ export default {
     changeAvatar() {
       uni.showToast({ title: "头像编辑功能开发中", icon: "none" });
     },
+
+    // 头像加载失败处理
+    handleAvatarError(e) {
+      console.error("头像加载失败:", e);
+      console.error("失败的头像URL:", this.avatarUrl);
+      console.error("用户信息:", this.userInfo);
+      console.error("原始头像字段值:", this.userInfo?.avatar);
+      
+      // 如果是OSS URL加载失败，可能是域名白名单问题
+      if (this.avatarUrl && this.avatarUrl.includes("aliyuncs.com")) {
+        console.error("OSS头像加载失败，可能原因：");
+        console.error("1. 小程序域名白名单未配置");
+        console.error("2. OSS跨域设置问题");
+        console.error("3. 图片URL无效");
+      }
+      
+      // 如果当前不是默认头像，尝试使用默认头像
+      if (!this.avatarUrl.includes("default-avatar")) {
+        console.log("切换到默认头像");
+        this.avatarError = true;
+        this.avatarUrl = "/static/default-avatar.png";
+      }
+    },
+
+    // 头像加载成功处理
+    handleAvatarLoad() {
+      console.log("头像加载成功:", this.avatarUrl);
+      this.avatarError = false;
+    },
   },
 };
 </script>
 
 <style lang="scss" scoped>
 .mine {
-  background: $uni-bg-color-page;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
   min-height: 100vh;
-  padding-bottom: $uni-padding-lg;
+  padding-bottom: 40rpx;
 }
 
-/* 顶部区域 */
+/* 顶部区域 - 统一渐变背景 */
 .header {
-  height: 380rpx;
-  background: $uni-color-primary-gradient;
+  height: 360rpx;
+  background: linear-gradient(135deg, #ff6b00 0%, #ff8c42 50%, #ffa366 100%);
   position: relative;
   overflow: hidden;
 }
 
 .bg-shape {
   position: absolute;
-  top: -150rpx;
-  right: -150rpx;
-  width: 400rpx;
-  height: 400rpx;
-  border-radius: $uni-border-radius-circle;
+  top: -100rpx;
+  right: -100rpx;
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.bg-shape::before {
+  content: "";
+  position: absolute;
+  top: 150rpx;
+  left: -80rpx;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
 }
 
 .user-card {
   display: flex;
   align-items: center;
-  padding: 100rpx $uni-padding-lg 0;
+  padding: 80rpx $uni-padding-lg 40rpx;
   position: relative;
   z-index: $uni-z-index-base;
 }
 
 .avatar-wrapper {
   position: relative;
-  margin-right: $uni-margin-base;
+  margin-right: $uni-margin-lg;
 }
 
 .avatar {
-  width: 140rpx;
-  height: 140rpx;
-  border-radius: $uni-border-radius-circle;
-  border: 4rpx solid rgba(255, 255, 255, 0.8);
-  box-shadow: $uni-shadow-lg;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+  background: $uni-bg-color;
 }
 
 .avatar-edit {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 44rpx;
-  height: 44rpx;
-  background: $uni-color-error;
-  border-radius: $uni-border-radius-circle;
+  width: 40rpx;
+  height: 40rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2rpx solid $uni-text-color-inverse;
+  border: 2rpx solid rgba(255, 107, 0, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .avatar-edit .icon {
-  font-size: 20rpx;
-  color: $uni-text-color-inverse;
+  font-size: 18rpx;
+  color: $uni-color-primary;
 }
 
 .info {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .nickname {
-  font-size: $uni-font-size-h2;
+  font-size: 36rpx;
   font-weight: $uni-font-weight-bold;
   color: $uni-text-color-inverse;
-  margin-bottom: $uni-spacing-xs;
-  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+  margin-bottom: 8rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 }
 
 .phone {
   font-size: $uni-font-size-base;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
+  opacity: 0.95;
 }
 
-/* 订单统计 */
+/* 订单统计 - 统一卡片样式 */
 .order-box {
-  background: $uni-bg-color-card;
-  margin: -60rpx $uni-margin-base $uni-margin-base;
-  border-radius: $uni-border-radius-lg;
-  padding: $uni-padding-base;
-  box-shadow: $uni-shadow-card;
+  background: $uni-bg-color;
+  margin: -50rpx $uni-margin-base $uni-margin-lg;
+  border-radius: 24rpx;
+  padding: $uni-padding-lg;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
   position: relative;
   z-index: $uni-z-index-base;
 }
@@ -348,13 +424,13 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: $uni-margin-base;
-  padding-bottom: $uni-padding-sm;
-  border-bottom: 1rpx solid $uni-border-color-light;
+  margin-bottom: $uni-margin-lg;
+  padding-bottom: $uni-padding-base;
+  border-bottom: 2rpx solid $uni-border-color-light;
 }
 
 .title {
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: $uni-font-weight-bold;
   color: $uni-text-color;
 }
@@ -362,11 +438,13 @@ export default {
 .more {
   font-size: $uni-font-size-sm;
   color: $uni-text-color-placeholder;
+  padding: 4rpx 8rpx;
 }
 
 .order-stats {
   display: flex;
   justify-content: space-around;
+  padding: $uni-padding-sm 0;
 }
 
 .item {
@@ -374,76 +452,87 @@ export default {
   flex-direction: column;
   align-items: center;
   flex: 1;
+  padding: $uni-padding-xs;
 }
 
 .icon-box {
   position: relative;
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: $uni-border-radius-lg;
-  background: $uni-bg-color-grey;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 15rpx;
-  transition: all $uni-transition-duration-base;
+  margin-bottom: 12rpx;
+  transition: all 0.3s ease;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.icon-box:active {
+  transform: scale(0.95);
 }
 
 .icon-box.active {
-  background: rgba(74, 144, 226, 0.1);
+  background: linear-gradient(135deg, rgba(255, 107, 0, 0.15) 0%, rgba(255, 140, 66, 0.1) 100%);
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 0, 0.2);
 }
 
 .icon {
-  font-size: 40rpx;
+  font-size: 44rpx;
 }
 
 .badge {
   position: absolute;
-  top: -10rpx;
-  right: -10rpx;
-  background: $uni-color-error;
+  top: -8rpx;
+  right: -8rpx;
+  background: linear-gradient(135deg, #ff4444 0%, #ff6b6b 100%);
   color: $uni-text-color-inverse;
-  font-size: $uni-font-size-xs;
-  min-width: 32rpx;
-  height: 32rpx;
-  border-radius: $uni-border-radius-base;
+  font-size: 20rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 $uni-spacing-xs;
+  padding: 0 8rpx;
   font-weight: $uni-font-weight-bold;
+  box-shadow: 0 2rpx 8rpx rgba(255, 68, 68, 0.3);
+  border: 2rpx solid $uni-bg-color;
 }
 
 .txt {
-  font-size: $uni-font-size-sm;
+  font-size: 24rpx;
   color: $uni-text-color-secondary;
+  font-weight: $uni-font-weight-medium;
 }
 
-/* 菜单列表 */
+/* 菜单列表 - 统一卡片样式 */
 .menu-list {
   padding: 0 $uni-padding-base;
 }
 
 .menu-group {
-  background: $uni-bg-color-card;
-  border-radius: $uni-border-radius-lg;
+  background: $uni-bg-color;
+  border-radius: 24rpx;
   margin-bottom: $uni-margin-base;
   overflow: hidden;
-  box-shadow: $uni-shadow-card;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 
 .menu-item {
-  height: 100rpx;
-  padding: 0 $uni-padding-base;
+  height: 108rpx;
+  padding: 0 $uni-padding-lg;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1rpx solid $uni-border-color-light;
-  transition: background $uni-transition-duration-fast;
+  transition: all 0.2s ease;
+  background: $uni-bg-color;
 }
 
 .menu-item:active {
-  background: $uni-bg-color-hover;
+  background: $uni-bg-color-grey;
 }
 
 .menu-item:last-child {
@@ -453,66 +542,55 @@ export default {
 .item-left {
   display: flex;
   align-items: center;
+  flex: 1;
 }
 
 .item-icon {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: $uni-border-radius-sm;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: $uni-margin-sm;
-  font-size: $uni-font-size-base;
+  margin-right: $uni-margin-base;
+  font-size: 28rpx;
+  flex-shrink: 0;
 }
 
 .item-icon.order {
-  background: rgba(33, 150, 243, 0.1);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.08) 100%);
   color: #2196f3;
 }
 
 .item-icon.cart {
-  background: rgba(255, 152, 0, 0.1);
-  color: $uni-color-warning;
-}
-
-.item-icon.address {
-  background: rgba(76, 175, 80, 0.1);
-  color: $uni-color-success;
-}
-
-.item-icon.favorite {
-  background: rgba(233, 30, 99, 0.1);
-  color: #e91e63;
-}
-
-.item-icon.service {
-  background: rgba(156, 39, 176, 0.1);
-  color: #9c27b0;
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15) 0%, rgba(255, 152, 0, 0.08) 100%);
+  color: #ff9800;
 }
 
 .item-icon.logout {
-  background: rgba(244, 67, 54, 0.1);
-  color: $uni-color-error;
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.08) 100%);
+  color: #f44336;
 }
 
 .label {
-  font-size: $uni-font-size-lg;
+  font-size: 30rpx;
   color: $uni-text-color;
-}
-
-.logout .label {
-  color: $uni-color-error;
   font-weight: $uni-font-weight-medium;
 }
 
+.logout .label {
+  color: #f44336;
+}
+
 .arrow {
-  font-size: $uni-font-size-xl;
+  font-size: 32rpx;
   color: $uni-border-color;
+  margin-left: $uni-margin-sm;
 }
 
 .logout-group {
   margin-bottom: 0;
+  margin-top: $uni-margin-base;
 }
 
 /* 加载状态 */
@@ -522,20 +600,21 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: $uni-z-index-modal;
+  backdrop-filter: blur(4rpx);
 }
 
 .loading-spinner {
   width: 80rpx;
   height: 80rpx;
-  border: 6rpx solid $uni-bg-color-grey;
+  border: 6rpx solid rgba(255, 107, 0, 0.1);
   border-top: 6rpx solid $uni-color-primary;
-  border-radius: $uni-border-radius-circle;
-  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
