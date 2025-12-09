@@ -1,15 +1,15 @@
 <template>
-  <view class="mine">
+    <view class="mine">
     <!-- 顶部背景 -->
     <view class="header">
       <view class="bg-shape"></view>
       <view class="user-card">
         <view class="avatar-wrapper" @tap="changeAvatar">
-          <image
-            :src="avatarUrl"
+        <image
+          :src="avatarUrl"
             :key="avatarUrl"
-            class="avatar"
-            mode="aspectFill"
+          class="avatar"
+          mode="aspectFill"
             @error="handleAvatarError"
             @load="handleAvatarLoad"
           ></image>
@@ -20,19 +20,19 @@
         <view class="info">
           <text class="nickname">{{ userInfo.nickname || "商家" }}</text>
           <text class="phone">{{ userInfo.phone || "点击登录" }}</text>
-          <text class="shop-name" v-if="shopInfo">{{ shopInfo.name }}</text>
-          <text
-            class="shop-status"
-            v-if="shopInfo"
-            :class="getStatusClass(shopInfo.status)"
-          >
-            {{ getStatusText(shopInfo.status) }}
-          </text>
+        <text class="shop-name" v-if="shopInfo">{{ shopInfo.name }}</text>
+        <text
+          class="shop-status"
+          v-if="shopInfo"
+          :class="getStatusClass(shopInfo.status)"
+        >
+          {{ getStatusText(shopInfo.status) }}
+        </text>
         </view>
       </view>
-    </view>
+      </view>
 
-    <!-- 统计信息卡片 -->
+      <!-- 统计信息卡片 -->
     <view class="stats-box" v-if="orderStats">
       <view class="box-title">
         <text class="title">数据统计</text>
@@ -43,28 +43,28 @@
         <view class="stat-card primary">
           <view class="stat-icon">📦</view>
           <view class="stat-content">
-            <text class="stat-number">{{ orderStats.pendingDelivery || 0 }}</text>
-            <text class="stat-label">待发货</text>
+          <text class="stat-number">{{ orderStats.pendingDelivery || 0 }}</text>
+          <text class="stat-label">待发货</text>
           </view>
         </view>
         
         <view class="stat-card success">
           <view class="stat-icon">📊</view>
           <view class="stat-content">
-            <text class="stat-number">{{ orderStats.todayOrders || 0 }}</text>
-            <text class="stat-label">今日订单</text>
+          <text class="stat-number">{{ orderStats.todayOrders || 0 }}</text>
+          <text class="stat-label">今日订单</text>
           </view>
         </view>
         
         <view class="stat-card warning">
           <view class="stat-icon">🛍️</view>
           <view class="stat-content">
-            <text class="stat-number">{{ orderStats.totalProducts || 0 }}</text>
-            <text class="stat-label">商品总数</text>
+          <text class="stat-number">{{ orderStats.totalProducts || 0 }}</text>
+          <text class="stat-label">商品总数</text>
           </view>
         </view>
+        </view>
       </view>
-    </view>
 
     <!-- 菜单列表 -->
     <view class="menu-list">
@@ -299,7 +299,7 @@ export default {
 
       if (!this.avatarUrl.includes("default-avatar")) {
         console.log("切换到默认头像");
-        this.avatarLoadError = true;
+      this.avatarLoadError = true;
         this.avatarUrl = "/static/default-avatar.png";
       }
     },

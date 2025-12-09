@@ -1,7 +1,16 @@
-const BASE_URL = "http://121.4.51.19:8080";
-// const BASE_URL = "http://localhost:8080";
+// 根据环境自动选择API地址
+let BASE_URL = "";
 
-// 导出 BASE_URL 供其他模块使用
+if (process.env.NODE_ENV === "development") {
+  BASE_URL = "";
+} else {
+  BASE_URL = "http://121.4.51.19:8080";
+}
+
+BASE_URL = "http://192.168.117.1:8080";
+
+BASE_URL = "http://192.168.117.1:8080";
+
 export { BASE_URL };
 
 // 全局请求封装
