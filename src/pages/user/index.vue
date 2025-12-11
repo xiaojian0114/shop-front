@@ -83,6 +83,7 @@ export default {
     return {
       list: [],
       featuredList: [],
+      originalList: [], // 保存原始商品列表，用于清空搜索时恢复
       currentIndex: 0,
       carouselTimer: null,
       searchTimer: null,
@@ -124,10 +125,12 @@ export default {
       try {
         const data = await productApi.getProductList();
         this.list = data || [];
+        this.originalList = [...this.list]; // 保存原始列表
         this.featuredList = this.list.slice(0, 3);
         this.startCarousel();
       } catch (err) {
         this.list = [];
+        this.originalList = [];
         this.featuredList = [];
       }
     },
@@ -164,20 +167,30 @@ export default {
 
     onSearchInput(e) {
       clearTimeout(this.searchTimer);
-      const keyword = e.detail.value || e;
+      // 正确获取输入值，空字符串也是有效值
+      const keyword = e.detail ? e.detail.value : (typeof e === 'string' ? e : '');
       this.searchTimer = setTimeout(() => {
         this.search(keyword);
       }, 300);
     },
 
     async search(keyword) {
-      if (!keyword) {
-        this.initPage();
+      // 如果关键词为空或只有空格，恢复原始列表
+      if (!keyword || !keyword.trim()) {
+        // 如果有保存的原始列表，直接恢复；否则重新加载
+        if (this.originalList.length > 0) {
+          this.list = [...this.originalList];
+          this.featuredList = this.list.slice(0, 3);
+          this.startCarousel();
+        } else {
+          // 如果没有原始列表，重新加载
+          this.initPage();
+        }
         return;
       }
 
       try {
-        const data = await productApi.searchProducts({ keyword });
+        const data = await productApi.searchProducts({ keyword: keyword.trim() });
         this.list = data || [];
         this.featuredList = this.list.slice(0, 3);
         this.startCarousel();

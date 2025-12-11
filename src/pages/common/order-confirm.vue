@@ -34,9 +34,22 @@
 
     <!-- 商品列表 -->
     <view class="goods-section">
-      <view class="section-title">商品信息</view>
+      <view class="section-title">
+        <text>商品信息</text>
+        <view class="check-all" @tap="toggleAll">
+          <view class="checkbox" :class="{ checked: allChecked }">
+            <text class="check-icon" v-if="allChecked">✓</text>
+          </view>
+          <text class="check-all-text">全选</text>
+        </view>
+      </view>
       <view class="goods-list">
         <view class="goods-item" v-for="item in goods" :key="item.id">
+          <view class="checkbox-wrapper" @tap="toggleItem(item)">
+            <view class="checkbox" :class="{ checked: item.checked }">
+              <text class="check-icon" v-if="item.checked">✓</text>
+            </view>
+          </view>
           <image
             :src="item.image || '/static/default.jpg'"
             mode="aspectFill"
@@ -62,8 +75,19 @@
     </view>
 
     <!-- 提交按钮 -->
-    <button class="submit-btn" @tap="submitOrder" :loading="submitting">
-      {{ submitting ? "提交中..." : "提交订单" }}
+    <button
+      class="submit-btn"
+      @tap="submitOrder"
+      :loading="submitting"
+      :disabled="selectedCount === 0"
+    >
+      {{
+        submitting
+          ? "提交中..."
+          : selectedCount > 0
+          ? `提交订单（已选${selectedCount}件）`
+          : "请选择商品"
+      }}
     </button>
   </view>
 </template>
@@ -84,8 +108,19 @@ export default {
     };
   },
   computed: {
+    selectedGoods() {
+      return this.goods.filter((g) => g.checked);
+    },
+    selectedCount() {
+      return this.selectedGoods.length;
+    },
+    allChecked() {
+      return this.goods.length > 0 && this.goods.every((g) => g.checked);
+    },
     total() {
-      return this.goods.reduce((sum, g) => sum + g.price * g.num, 0).toFixed(2);
+      return this.selectedGoods
+        .reduce((sum, g) => sum + g.price * g.num, 0)
+        .toFixed(2);
     },
   },
   onLoad(options) {
@@ -111,6 +146,7 @@ export default {
             image: item.productImage,
             price: Number(item.price),
             num: item.num,
+            checked: true,
           }));
       } catch (err) {
         console.error("加载商品失败:", err);
@@ -128,8 +164,23 @@ export default {
       }
     },
 
+    // 勾选单个商品
+    toggleItem(item) {
+      item.checked = !item.checked;
+    },
+
+    // 全选/反选
+    toggleAll() {
+      const next = !this.allChecked;
+      this.goods.forEach((g) => (g.checked = next));
+    },
+
     // 提交订单
     async submitOrder() {
+      if (this.selectedCount === 0) {
+        uni.showToast({ title: "请选择要支付的商品", icon: "none" });
+        return;
+      }
       if (!this.nickname.trim()) {
         uni.showToast({ title: "请填写收货人姓名", icon: "none" });
         return;
@@ -146,7 +197,7 @@ export default {
       this.submitting = true;
       try {
         const orderNo = await orderApi.submitOrder({
-          productIds: this.ids,
+          productIds: this.selectedGoods.map((g) => g.id),
           address: this.address,
           nickname: this.nickname,
           phone: this.phone,
@@ -210,6 +261,9 @@ export default {
   font-size: $uni-font-size-lg;
   color: $uni-text-color-secondary;
   font-weight: $uni-font-weight-medium;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .goods-item {
@@ -218,6 +272,36 @@ export default {
   background: $uni-bg-color;
   padding: $uni-padding-base;
   border-bottom: 1rpx solid $uni-border-color-light;
+}
+.checkbox-wrapper {
+  margin-right: $uni-margin-sm;
+}
+.checkbox {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 18rpx;
+  border: 2rpx solid $uni-border-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $uni-bg-color;
+}
+.checkbox.checked {
+  background: $uni-color-primary;
+  border-color: $uni-color-primary;
+}
+.check-icon {
+  color: $uni-text-color-inverse;
+  font-size: $uni-font-size-base;
+}
+.check-all {
+  display: flex;
+  align-items: center;
+  gap: $uni-spacing-xs;
+}
+.check-all-text {
+  font-size: $uni-font-size-base;
+  color: $uni-text-color;
 }
 .thumb {
   width: 160rpx;

@@ -217,7 +217,13 @@ export default {
               await merchantApi.product.onSale(goods.id);
               uni.showToast({ title: "上架成功", icon: "success" });
             }
-            this.loadGoods();
+            // 本地立即更新，避免等待重新加载导致“没变化”的错觉
+            this.goods = this.goods.map((item) =>
+              item.id === goods.id
+                ? { ...item, isOnSale: isOn ? 0 : 1 }
+                : item
+            );
+            await this.loadGoods(); // 再次拉取，确保与后端一致
           } catch (error) {
             console.error("上下架失败:", error);
             uni.showToast({ title: "操作失败", icon: "none" });

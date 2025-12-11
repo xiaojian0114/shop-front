@@ -48,6 +48,26 @@ export default {
   },
 
   /**
+   * 获取热门推荐（按销量优先，上架时间倒序）
+   * @param {Object} params
+   * @param {number} params.limit - 返回数量，默认10，最大50
+   * @returns {Promise}
+   */
+  getHotRecommend(params) {
+    return request.get("/user/products/recommend", params);
+  },
+
+  /**
+   * 获取上新推荐（按上架时间倒序）
+   * @param {Object} params
+   * @param {number} params.limit - 返回数量，默认10，最大50
+   * @returns {Promise}
+   */
+  getNewRecommend(params) {
+    return request.get("/user/products/new", params);
+  },
+
+  /**
    * 获取店铺商品列表
    * @param {Object} params - 查询参数
    * @param {number} params.shopId - 店铺ID

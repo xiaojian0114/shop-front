@@ -1,4 +1,3 @@
-// 根据环境自动选择API地址
 let BASE_URL = "";
 
 if (process.env.NODE_ENV === "development") {
@@ -7,10 +6,12 @@ if (process.env.NODE_ENV === "development") {
   BASE_URL = "http://121.4.51.19:8080";
 }
 
-BASE_URL = "http://192.168.117.1:8080";
+BASE_URL = "http://121.4.51.19:8080";
 
-BASE_URL = "http://192.168.117.1:8080";
+BASE_URL = "http://121.4.51.19:8080";
+// #endif
 
+// 导出 BASE_URL 供其他模块使用
 export { BASE_URL };
 
 // 全局请求封装
